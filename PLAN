@@ -1,0 +1,7 @@
+Two Steps:
+1) Check if program is correct
+Stupid: Generate random test cases
+Smart: Generate test cases that have full code coverage
+2) Mutate Program
+Stupid: Randomly mutate AST
+Smart: Non-determinize random lines (this is just exhaustively doing the above?)
