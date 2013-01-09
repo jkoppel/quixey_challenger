@@ -24,12 +24,12 @@ import Language.Java.Pretty ( pretty )
 
 import Language.KURE ( MonadCatch, catchM, translate, crushbuT, (<+), Translate, Rewrite, apply, constT, anybuR )
 import Language.KURE.Injection ( promoteT, inject, promoteR )
-import Language.KURE.Utilities ( KureMonad, runKureMonad )
+import Language.KURE.Utilities ( KureM, runKureM )
 
 import Kure
 import KureCong ( Context, initialContext )
 
-instance MonadError String KureMonad where
+instance MonadError String KureM where
   throwError = fail
   catchError = catchM
 
@@ -166,7 +166,7 @@ plusOne = Mutation { applicable = \e m -> let t = runReader (inferExp e) m in
                                           
 allMutations = [ plusOne ]
 
-mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) Exp
+mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) Exp
 mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
                                       if l /= n
                                        then
@@ -182,7 +182,7 @@ mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
                                                  return $ mutate m e
                                        
 
-mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) GenericJava
+mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) GenericJava
 mutateExp n = anybuR $ promoteR $ mutateExp' n
 
 
@@ -190,11 +190,11 @@ mutateExp n = anybuR $ promoteR $ mutateExp' n
 mutateProgram :: RandomGen g => g -> String -> String
 mutateProgram g str = case parser compilationUnit str of
                        Left _ -> error "Parse error"
-                       Right tree -> let tm = runKureMonad id (error "type map failed") (apply getTypeMap initialContext (inject tree))
-                                         nExp = getSum $ runKureMonad id (error "count exp failed") (apply countExp initialContext (inject tree))
+                       Right tree -> let tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject tree))
+                                         nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject tree))
                                          (i, g') = randomR (0,nExp-1) g
                                          t = runReaderT (apply (mutateExp (i :: Int)) initialContext (inject tree)) tm
                                          t' = evalStateT t 0
                                          t'' = evalRandT t' g' in
-                                     show $ pretty $ runKureMonad (\(GCompilationUnit c) -> c) (error "thing failed") t''
+                                     show $ pretty $ runKureM (\(GCompilationUnit c) -> c) (error "thing failed") t''
                                 
