@@ -138,11 +138,44 @@ countExp = crushbuT $ promoteT countExp'
 data Mutation =  Mutation { applicable :: Exp -> TypeMap -> Bool,
                             mutate :: Exp -> Exp }
 
+typ e m = runReader (inferExp e) m
 
-plusOne = Mutation { applicable = \e m -> let t = runReader (inferExp e) m in
-                                          t == (Base $ PrimType IntT),
+is_int :: Exp -> TypeMap -> Bool
+is_int e m = (typ e m) == (Base $ PrimType IntT)
+is_bool e m = (typ e m) == (Base $ PrimType IntT)
+
+plusOne = Mutation { applicable = is_int,
                      mutate = \e -> BinOp e Add (Lit $ Int 1) }
-                                          
+subOne = Mutation { applicable = is_int,
+                     mutate = \e -> BinOp e Sub (Lit $ Int 1) }
+zero = Mutation { applicable = is_int,
+                  mutate = \e -> Lit $ Int 0 }
+not = Mutation { applicable = is_bool,
+                 mutate = \e -> PreNot }
+left_proj = Mutation { applicable (BinOp e1 o e2) = True
+                       applicable _ = False,
+                       mutate (BinOp e1 o e2) = e1 }
+right_proj = Mutation { applicable (BinOp e1 o e2) = True
+                       applicable _ = False,
+                       mutate (BinOp e1 o e2) = e2 }
+strip_unop = Mutation { applicable (PostIncrement _) = True
+                        applicable (PostDecrement _) = True
+                        applicable (PreIncrement _) = True
+                        applicable (PreDecrement _) = True
+                        applicable (PrePlus _) = True
+                        applicable (PreMinus _) = True
+                        applicable (PreBitCompl _) = True
+                        applicable (PreNot _) = True
+                        applicable _ = False,
+
+                        mutate (PostIncrement e) = e
+                        mutate (PostDecrement e) = e
+                        mutate (PreIncrement e) = e
+                        mutate (PreDecrement e) = e
+                        mutate (PrePlus e) = e
+                        mutate (PreMinus e) = e
+                        mutate (PreBitCompl e) = e
+                        mutate (PreNot e) = e }
 
 guardMutate :: (MonadRandom m, MonadReader Int m, MonadState Int m, MonadCatch m)  => Int -> Rewrite Context m Exp
 guardMutate n = translate $ \_ e -> do l <- nextLabel

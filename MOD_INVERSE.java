@@ -6,9 +6,11 @@ import static java.lang.Math.*;
 public class MOD_INVERSE {
     public static void main(String[] args) throws Exception {
         Scanner in = new Scanner(System.in);
-        int base = in.nextInt();
-        int mod = in.nextInt();
-        System.out.println(inverse(base, mod));
+        while(in.hasNextInt()) {
+            int base = in.nextInt();
+            int mod = in.nextInt();
+            System.out.println(inverse(base, mod));
+        }
     }
     static int inverse(int base, int mod) {
         if(base == 1) {

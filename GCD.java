@@ -6,9 +6,11 @@ import static java.lang.Math.*;
 public class GCD {
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
-        int x = in.nextInt();
-        int y = in.nextInt();
-        System.out.println(gcd(x,y));
+        while(in.hasNextInt()) {
+            int x = in.nextInt();
+            int y = in.nextInt();
+            System.out.println(gcd(x,y));
+        }
     }
     public static boolean pre(int x, int y) {
         return x>=0 && y>=0;
