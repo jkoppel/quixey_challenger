@@ -7,6 +7,7 @@ import Debug.Trace
 import Data.Int
 import Data.List.Split
 import System.Timeout
+import System.Directory
 
 challenges = [("GCD", gcd_in, gcd_check),
               ("MAX_SUBSET", mw_in, mw_check),
@@ -21,23 +22,39 @@ max_int = 1000*1000
 
 -- MAIN CODE
 main = do
-    test 0
-    test 1
-    test 2
-    test 3
-    test 4
+    fix 0
+    fix 1
+    fix 2
+    fix 3
+    fix 4
 
 fix :: Int -> IO ()
 fix n = do
-    
+    renameFile file orig_file
+    program <- readFile orig_file
+    rng <- getStdGen
+    loop n program rng
+    where
+    (name, _, _) = challenges !! n
+    file = name ++ ".java"
+    orig_file = name ++ "_orig.java"
 
+loop :: Int -> String -> StdGen -> IO ()
+loop n program rng = do
+    writeFile file mutated
     p <- runCommand ("javac " ++ file)
     waitForProcess p
-    good <- run_cases test_cases name input output
-    putStrLn $ show good
+    good <- run_cases test_cases file input output
+    if good
+    then return ()
+    else loop n program rng
     where
-        (name, input, output) = challenges !! n
-        file = name ++ ".java"
+    (name, input, output) = challenges !! n
+    file = name ++ ".java"
+    mutated = mutateProgram rng program
+
+mutateProgram :: StdGen -> String -> String
+mutateProgram = undefined
 
 run_cases :: Int -> String -> IO String -> (String -> String -> Bool) -> IO Bool
 run_cases n prog make_in check_out = do
