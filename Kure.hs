@@ -20,7 +20,7 @@ import Boilerplate
 
 --------------------------------------------------------------------------------
 
-type JMonad = KureMonad
+type JMonad = KureM
 type JM = JMonad
 
 --------------------------------------------------------------------------------
@@ -31,10 +31,10 @@ type RewriteJ a = TranslateJ a a
 type RJ a = RewriteJ a
 
 applyJ :: TJ a b -> a -> Either String b
-applyJ t = runKureMonad Right Left . apply t initialContext
+applyJ t = runKureM Right Left . apply t initialContext
 
 applyJNoFail :: TJ a b -> a -> b
-applyJNoFail t = runKureMonad id (error "applyJNoFail failed") . apply t initialContext
+applyJNoFail t = runKureM id (error "applyJNoFail failed") . apply t initialContext
 
 --------------------------------------------------------------------------------
 
