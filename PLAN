@@ -5,3 +5,6 @@ Smart: Generate test cases that have full code coverage
 2) Mutate Program
 Stupid: Randomly mutate AST
 Smart: Non-determinize random lines (this is just exhaustively doing the above?)
+
+
+MOD_INVERSE is wrong, consider BASE = 1. All we require is BASE > 0, MOD > 0, (BASE,MOD)=1

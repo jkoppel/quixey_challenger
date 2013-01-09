@@ -152,11 +152,52 @@ countExp = crushbuT $ promoteT countExp'
 data Mutation =  Mutation { applicable :: Exp -> TypeMap -> Bool,
                             mutate :: Exp -> Exp }
 
+typ e m = runReader (inferExp e) m
 
-plusOne = Mutation { applicable = \e m -> let t = runReader (inferExp e) m in
-                                          t == (Base $ PrimType IntT),
-                     mutate = \e -> BinOp e Add (Lit $ Int 1) } 
-                                          
+is_int :: Exp -> TypeMap -> Bool
+is_int e m = (typ e m) == (Base $ PrimType IntT)
+is_bool e m = (typ e m) == (Base $ PrimType IntT)
+
+plusOne = Mutation { applicable = is_int,
+                     mutate = \e -> BinOp e Add (Lit $ Int 1) }
+subOne = Mutation { applicable = is_int,
+                     mutate = \e -> BinOp e Sub (Lit $ Int 1) }
+zero = Mutation { applicable = is_int,
+                  mutate = \e -> Lit $ Int 0 }
+not = Mutation { applicable = is_bool,
+                 mutate = \e -> PreNot }
+left_proj = Mutation { applicable (BinOp e1 o e2) = True
+                       applicable _ = False,
+                       mutate (BinOp e1 o e2) = e1 }
+right_proj = Mutation { applicable (BinOp e1 o e2) = True
+                       applicable _ = False,
+                       mutate (BinOp e1 o e2) = e2 }
+strip_unop = Mutation { applicable (PostIncrement _) = True
+                        applicable (PostDecrement _) = True
+                        applicable (PreIncrement _) = True
+                        applicable (PreDecrement _) = True
+                        applicable (PrePlus _) = True
+                        applicable (PreMinus _) = True
+                        applicable (PreBitCompl _) = True
+                        applicable (PreNot _) = True
+                        applicable _ = False,
+
+                        mutate (PostIncrement e) = e
+                        mutate (PostDecrement e) = e
+                        mutate (PreIncrement e) = e
+                        mutate (PreDecrement e) = e
+                        mutate (PrePlus e) = e
+                        mutate (PreMinus e) = e
+                        mutate (PreBitCompl e) = e
+                        mutate (PreNot e) = e }
+
+guardMutate :: (MonadRandom m, MonadReader Int m, MonadState Int m, MonadCatch m)  => Int -> Rewrite Context m Exp
+guardMutate n = translate $ \_ e -> do l <- nextLabel
+                                       if l /= n
+                                        then
+                                          fail ""
+                                        else
+                                         return e
 allMutations = [ plusOne ]
 
 mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) Exp
@@ -173,6 +214,7 @@ mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
                                             else
                                               do m <- lift $ lift $ randElt goodMutations
                                                  return $ mutate m e
+>>>>>>> dcec8ab07fb6f674e51b15887ff20a42aeebc6a0
                                        
 
 mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) GenericJava
@@ -185,6 +227,10 @@ main = do fil <- liftM last getArgs
           case parser compilationUnit str of
                Left _ -> error "Parse error"
                Right tree -> do let tm = runKureMonad id (error "type map failed") (apply getTypeMap initialContext (inject tree))
+<<<<<<< HEAD
+                                putStrLn (runKureMonad id (error "showExpTypes failed") (runReaderT (apply showExpTypes initialContext (inject tree)) tm))
+                                return ()
+=======
                                     nExp = getSum $ runKureMonad id (error "count exp failed") (apply countExp initialContext (inject tree))
                                 i <- randomRIO (0,nExp-1)
                                 let t = runReaderT (apply (mutateExp i) initialContext (inject tree)) tm
@@ -192,3 +238,4 @@ main = do fil <- liftM last getArgs
                                     t'' = evalRandT t' g
                                 putStrLn $ show $ pretty $ runKureMonad (\(GCompilationUnit c) -> c) (error "thing failed") t''
                                 return ()
+>>>>>>> dcec8ab07fb6f674e51b15887ff20a42aeebc6a0
