@@ -6,22 +6,23 @@ import qualified Data.Map as Map
 
 import Control.Applicative ( Applicative )
 import Control.Monad ( liftM )
+import Control.Monad.Trans.Class ( lift )
 import Control.Monad.Error ( MonadError, throwError, catchError )
-import Control.Monad.Reader ( MonadReader, runReaderT, ask, runReader )
-import Control.Monad.Random ( MonadRandom )
-import Control.Monad.State ( MonadState, get, modify )
+import Control.Monad.Reader ( MonadReader, runReaderT, ask, runReader, ReaderT )
+import Control.Monad.Random ( MonadRandom, evalRandT, getRandomR, RandT, getSplit )
+import Control.Monad.State ( MonadState, get, modify, evalStateT, StateT )
 import Data.Maybe ( fromJust )
-import Data.Monoid ( mconcat, Sum (Sum))
+import Data.Monoid ( mconcat, Sum (Sum), getSum)
 import Debug.Trace
 
 import System.Environment ( getArgs )
-import System.Random ( getStdGen )
+import System.Random ( getStdGen, randomRIO, RandomGen )
 
 import Language.Java.Syntax
 import Language.Java.Parser ( compilationUnit, parser )
 import Language.Java.Pretty ( pretty )
 
-import Language.KURE ( MonadCatch, catchM, translate, crushbuT, (<+), Translate, Rewrite, apply, constT, onebuR )
+import Language.KURE ( MonadCatch, catchM, translate, crushbuT, (<+), Translate, Rewrite, apply, constT, anybuR )
 import Language.KURE.Injection ( promoteT, inject, promoteR )
 import Language.KURE.Utilities ( KureMonad, runKureMonad )
 
@@ -36,6 +37,14 @@ instance MonadError String m => MonadCatch m where
   catchM = catchError
 
 
+instance (MonadError e m, RandomGen g) => MonadError e (RandT g m) where
+  throwError = lift . throwError
+
+  m `catchError` f = do g <- getSplit
+                        g' <- getSplit
+                        let f' e = evalRandT (f e) g'
+                        lift $ evalRandT m g `catchError` f'
+
 data JavaType = Base Type
               | Top
               deriving (Show, Eq)
@@ -46,6 +55,11 @@ nextLabel :: (Num a, MonadState a m) => m a
 nextLabel = do n <- get
                modify (+1)
                return n
+
+
+randElt :: MonadRandom m => [a] -> m a
+randElt l = do n <- getRandomR (0, (length l) - 1)
+               return $ l !! n --(trace ("n is :" ++ show n) n)
 
 convertVarDeclId :: JavaType -> VarDeclId -> (Ident, JavaType)
 convertVarDeclId t (VarId id) = (id, t)
@@ -141,20 +155,28 @@ data Mutation =  Mutation { applicable :: Exp -> TypeMap -> Bool,
 
 plusOne = Mutation { applicable = \e m -> let t = runReader (inferExp e) m in
                                           t == (Base $ PrimType IntT),
-                     mutate = \e -> BinOp e Add (Lit $ Int 1) }
+                     mutate = \e -> BinOp e Add (Lit $ Int 1) } 
                                           
+allMutations = [ plusOne ]
 
-guardMutate :: (MonadRandom m, MonadReader Int m, MonadState Int m, MonadCatch m)  => Int -> Rewrite Context m Exp
-guardMutate n = translate $ \_ e -> do l <- nextLabel
-                                       if l /= n
-                                        then
-                                          fail ""
-                                        else
-                                         return e
+mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) Exp
+mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
+                                      if l /= n
+                                       then
+                                        return e
+                                       else
+                                        do tm <- ask
+                                           let goodMutations = filter (\m -> applicable m e tm) allMutations
+                                           if null $ goodMutations
+                                            then
+                                              return e
+                                            else
+                                              do m <- lift $ lift $ randElt goodMutations
+                                                 return $ mutate m e
                                        
 
---mutateGeneric :: (MonadRandom m, MonadReader m) => Int -> Rewrite Context m GenericJava
---mutateGeneric n = onebuR $ promoteR $ mutateExp' n
+mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) GenericJava
+mutateExp n = anybuR $ promoteR $ mutateExp' n
 
 main :: IO ()
 main = do fil <- liftM last getArgs
@@ -163,5 +185,10 @@ main = do fil <- liftM last getArgs
           case parser compilationUnit str of
                Left _ -> error "Parse error"
                Right tree -> do let tm = runKureMonad id (error "type map failed") (apply getTypeMap initialContext (inject tree))
-                                putStrLn (runKureMonad id (error "showExpTypes failed") (runReaderT (apply showExpTypes initialContext (inject tree)) tm))
+                                    nExp = getSum $ runKureMonad id (error "count exp failed") (apply countExp initialContext (inject tree))
+                                i <- randomRIO (0,nExp-1)
+                                let t = runReaderT (apply (mutateExp i) initialContext (inject tree)) tm
+                                    t' = evalStateT t 0
+                                    t'' = evalRandT t' g
+                                putStrLn $ show $ pretty $ runKureMonad (\(GCompilationUnit c) -> c) (error "thing failed") t''
                                 return ()
