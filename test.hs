@@ -8,6 +8,7 @@ import Data.Int
 import Data.List.Split
 import System.Timeout
 import System.Directory
+import Mutate
 
 challenges = [("GCD", gcd_in, gcd_check),
               ("MAX_SUBSET", mw_in, mw_check),
@@ -52,9 +53,6 @@ loop n program rng = do
     (name, input, output) = challenges !! n
     file = name ++ ".java"
     mutated = mutateProgram rng program
-
-mutateProgram :: StdGen -> String -> String
-mutateProgram = undefined
 
 run_cases :: Int -> String -> IO String -> (String -> String -> Bool) -> IO Bool
 run_cases n prog make_in check_out = do
