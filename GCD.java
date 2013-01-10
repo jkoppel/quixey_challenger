@@ -14,18 +14,6 @@ public class GCD
       System.out.println(gcd(x, y));
     }
   }
-  public static boolean pre (int x, int y)
-  {
-    return (x >= 0 && y) >= 0;
-  }
-  static int real_gcd (int x, int y)
-  {
-    return y == 0 ? x : gcd(y, x % y);
-  }
-  static boolean post (int x, int y, int d)
-  {
-    return d == real_gcd(x, y + 1);
-  }
   static int gcd (int a, int b)
   {
     if (b == 0)
