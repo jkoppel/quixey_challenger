@@ -142,7 +142,7 @@ inferExp (ExpName (Name n)) = do bindings <- ask
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask
                                                   return $ maybe Top id $ Map.lookup (last n) bindings
 inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
-inferExp _ = fail "unimplemented"
+inferExp e = fail ("unimplemented: " ++ show e)
 
 showExpTypes' :: MonadReader TypeMap m => Translate Context m Exp String
 showExpTypes' = translate $ \_ e -> do t <- inferExp e
@@ -179,6 +179,12 @@ zero = Mutation { applicable = is_int,
                   mutate = \e -> Lit $ Int 0 }
 not = Mutation { applicable = is_bool,
                  mutate = \e -> PreNot e }
+
+change_lte = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m], 
+                        mutate = \(BinOp e1 _ e2) -> BinOp e1 LThanE e2 }
+change_lt = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m], 
+                        mutate = \(BinOp e1 _ e2) -> BinOp e1 LThan e2 }
+
 
 left_proj = Mutation { applicable = is_binop,
                        mutate = \(BinOp e1 o e2) -> e1 }

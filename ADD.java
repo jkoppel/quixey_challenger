@@ -11,7 +11,7 @@ public class ADD
     {
       int x = in.nextInt();
       int y = in.nextInt();
-      System.out.println(x + y - 1 + 1);
+      System.out.println(x + y - 0);
     }
   }
 }

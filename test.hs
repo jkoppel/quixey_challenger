@@ -18,13 +18,15 @@ challenges = [("GCD", gcd_in, gcd_check),
               ("ADD", add_in, add_check)
              ]
 
-test_cases = 100
+test_cases = 1000
 max_array_size = 6
 max_int = 1000*1000
 
 -- MAIN CODE
 main = do
-    fix 5
+    fix 3
+    --good <- run_cases test_cases "MOD_INVERSE" mod_inv_in mod_inv_check
+    --putStrLn $ show good
 
 fix :: Int -> IO ()
 fix n = do
@@ -41,9 +43,8 @@ loop :: Int -> String -> StdGen -> IO ()
 loop n program rng = do
     removeFile file
     writeFile file mutated
-    str <- readFile file
     p <- runCommand ("javac " ++ file)
-    trace str (waitForProcess p)
+    waitForProcess p
     good <- run_cases test_cases name input output
     putStrLn $ show good
     if good
