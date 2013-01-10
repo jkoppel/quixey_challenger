@@ -130,7 +130,7 @@ inferExp (PreIncrement e) = inferExp e
 inferExp (PostDecrement e) = inferExp e
 inferExp (PreDecrement e) = inferExp e
 inferExp (PrePlus e) = inferExp e
-inferExp (PrePlus e) = inferExp e
+inferExp (PreMinus e) = inferExp e
 inferExp (PreBitCompl e) = inferExp e
 inferExp (PreNot e) = return $ Base $ PrimType BooleanT
 inferExp (BinOp e o _) = do t <- inferExp e
@@ -141,6 +141,7 @@ inferExp (ExpName (Name n)) = do bindings <- ask
                                  return $ fromJust $ Map.lookup (last n) bindings
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask
                                                   return $ fromJust $ Map.lookup (last n) bindings
+inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
 inferExp _ = fail "unimplemented"
 
 showExpTypes' :: MonadReader TypeMap m => Translate Context m Exp String
