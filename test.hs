@@ -24,6 +24,10 @@ max_int = 1000*1000
 -- MAIN CODE
 main = do
     fix 2
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5144992234902a3c95e85aab54ad65450007768a
 
 fix :: Int -> IO ()
 fix n = do
@@ -44,7 +48,11 @@ loop n program rng = do
     good <- run_cases test_cases file input output
     if good
     then return ()
+<<<<<<< HEAD
     else trace mutated (loop n program rng')
+=======
+    else trace mutated $ loop n program rng
+>>>>>>> 5144992234902a3c95e85aab54ad65450007768a
     where
     (name, input, output) = challenges !! n
     file = name ++ ".java"

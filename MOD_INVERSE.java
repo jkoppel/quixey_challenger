@@ -2,15 +2,16 @@ import java.util.*;
 import java.io.*;
 import java.awt.Point;
 import static java.lang.Math.*;
-
-public class MOD_INVERSE {
-    public static void main(String[] args) throws Exception {
-        Scanner in = new Scanner(System.in);
-        while(in.hasNextInt()) {
-            int base = in.nextInt();
-            int mod = in.nextInt();
-            System.out.println(inverse(base, mod));
-        }
+public class MOD_INVERSE
+{
+  public static void main (String[] args) throws Exception
+  {
+    Scanner in = new Scanner(System.in);
+    while (in.hasNextInt())
+    {
+      int base = in.nextInt();
+      int mod = in.nextInt();
+      System.out.println(inverse(base + 1, mod));
     }
     static int inverse(int base, int mod) {
         if(base == 1) {
@@ -20,4 +21,5 @@ public class MOD_INVERSE {
             return (coeff*mod)/base;
         }
     }
+  }
 }
