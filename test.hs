@@ -23,11 +23,8 @@ max_int = 1000*1000
 
 -- MAIN CODE
 main = do
-    fix 0
-    fix 1
     fix 2
-    fix 3
-    fix 4
+
 
 fix :: Int -> IO ()
 fix n = do
@@ -48,7 +45,7 @@ loop n program rng = do
     good <- run_cases test_cases file input output
     if good
     then return ()
-    else loop n program rng
+    else trace mutated $ loop n program rng
     where
     (name, input, output) = challenges !! n
     file = name ++ ".java"
@@ -63,7 +60,7 @@ run_cases n prog make_in check_out = do
         Just (exit, out, err) -> case exit of
             ExitSuccess -> do
                 return $ and $ map (uncurry check_out) $ zip (lines input) (lines out)
-            ExitFailure _ -> trace (err++" "++input) (return $ False)
+            ExitFailure _ -> return $ False
 
 -- UTILITIES
 rList :: Int -> IO [Int]

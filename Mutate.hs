@@ -187,7 +187,7 @@ mutateExp n = anybuR $ promoteR $ mutateExp' n
 
 
 
-mutateProgram :: RandomGen g => g -> String -> String
+mutateProgram :: RandomGen g => g -> String -> (String, g)
 mutateProgram g str = case parser compilationUnit str of
                        Left _ -> error "Parse error"
                        Right tree -> let tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject tree))
@@ -195,6 +195,7 @@ mutateProgram g str = case parser compilationUnit str of
                                          (i, g') = randomR (0,nExp-1) g
                                          t = runReaderT (apply (mutateExp (i :: Int)) initialContext (inject tree)) tm
                                          t' = evalStateT t 0
-                                         t'' = evalRandT t' g' in
-                                     show $ pretty $ runKureM (\(GCompilationUnit c) -> c) (error "thing failed") t''
+                                         (t'', g'') = runRandT t' g' in
+                                     (show $ pretty $ runKureM (\(GCompilationUnit c) -> c) (error "thing failed") t'',
+                                      g'')
                                 
