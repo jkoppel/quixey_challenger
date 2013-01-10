@@ -27,7 +27,7 @@ main = do
 
 fix :: Int -> IO ()
 fix n = do
-    renameFile file orig_file
+    --renameFile file orig_file
     program <- readFile orig_file
     rng <- getStdGen
     loop n program rng
