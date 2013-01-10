@@ -30,7 +30,6 @@ main = do
 
 fix :: Int -> IO ()
 fix n = do
-    --renameFile file orig_file
     program <- readFile orig_file
     rng <- getStdGen
     loop n program rng
@@ -44,12 +43,17 @@ loop n program rng = do
     removeFile file
     writeFile file mutated
     p <- runCommand ("javac " ++ file)
-    waitForProcess p
-    good <- run_cases test_cases name input output
-    putStrLn $ show good
-    if good
-    then return ()
-    else loop n program rng'
+    javac <- trace mutated (waitForProcess p)
+    case javac of
+        ExitFailure _ -> loop n program rng'
+        ExitSuccess -> do
+            putStrLn "JAVAC PASSED"
+            good <- run_cases test_cases name input output
+            putStrLn "TEST CASES RUN"
+            putStrLn $ show good
+            if good
+            then return ()
+            else loop n program rng'
     where
     (name, input, output) = challenges !! n
     file = name ++ ".java"
@@ -58,7 +62,9 @@ loop n program rng = do
 run_cases :: Int -> String -> IO String -> (String -> String -> Bool) -> IO Bool
 run_cases n prog make_in check_out = do
     input <- liftM unlines $ mapM (\_ -> make_in) [1..n]
+    putStrLn "RUNNING PROGRAM"
     results <- timeout (1000*1000) $ readProcessWithExitCode "java" [prog] input
+    putStrLn "RAN PROGRAM"
     case results of
         Nothing -> return $ False
         Just (exit, out, err) -> case exit of

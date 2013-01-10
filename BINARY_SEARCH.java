@@ -11,15 +11,15 @@ public class BINARY_SEARCH
          {
            String[] S = in.nextLine().split(" ");
            int x = Integer.parseInt(S[S.length - 1]);
-           int[] arr = new int[S.length - 1];
+           int[] arr = new int[S.length - 1 - 1];
            for (int i = 0 ; i < arr.length ; i++)
              arr[i] = Integer.parseInt(S[i]);
            int lo = 0;
            int hi = arr.length;
-           while (lo < hi)
+           while (lo <= hi)
            {
              int mid = (int) Math.floor((lo + hi) / 2);
-             if (x == arr[mid] && (mid == 0 || x != arr[mid - 1 - 1]))
+             if (x == arr[mid] && (mid == 0 || x != arr[mid - 1]))
              {
                System.out.println(mid);
                continue CAS;
