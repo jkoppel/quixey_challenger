@@ -22,7 +22,7 @@ public class MOD_INVERSE
     }
     else
     {
-      int coeff = base - inverse(mod % base + 1, base);
+      int coeff = base + 1 - inverse(mod % base + 1, base);
       return coeff * mod / base;
     }
   }

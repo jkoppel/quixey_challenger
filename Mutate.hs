@@ -142,6 +142,7 @@ inferExp (ExpName (Name n)) = do bindings <- ask
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask
                                                   return $ maybe Top id $ Map.lookup (last n) bindings
 inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
+inferExp (ArrayCreate _ _ _) = return Top
 inferExp _ = fail "unimplemented"
 
 showExpTypes' :: MonadReader TypeMap m => Translate Context m Exp String
