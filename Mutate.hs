@@ -9,7 +9,7 @@ import Control.Monad ( liftM )
 import Control.Monad.Trans.Class ( lift )
 import Control.Monad.Error ( MonadError, throwError, catchError )
 import Control.Monad.Reader ( MonadReader, runReaderT, ask, runReader, ReaderT )
-import Control.Monad.Random ( MonadRandom, evalRandT, getRandomR, RandT, getSplit )
+import Control.Monad.Random ( MonadRandom, runRandT, evalRandT, getRandomR, RandT, getSplit )
 import Control.Monad.State ( MonadState, get, modify, evalStateT, StateT )
 import Data.Maybe ( fromJust )
 import Data.Monoid ( mconcat, Sum (Sum), getSum)
@@ -160,11 +160,47 @@ data Mutation =  Mutation { applicable :: Exp -> TypeMap -> Bool,
                             mutate :: Exp -> Exp }
 
 
-plusOne = Mutation { applicable = \e m -> let t = runReader (inferExp e) m in
-                                          t == (Base $ PrimType IntT),
-                     mutate = \e -> BinOp e Add (Lit $ Int 1) } 
-                                          
-allMutations = [ plusOne ]
+typ e m = runReader (inferExp e) m
+
+is_int :: Exp -> TypeMap -> Bool
+is_int e m = (typ e m) == (Base $ PrimType IntT)
+is_bool e m = (typ e m) == (Base $ PrimType IntT)
+
+plusOne = Mutation { applicable = is_int,
+                     mutate = \e -> BinOp e Add (Lit $ Int 1) }
+{-
+subOne = Mutation { applicable = is_int,
+                     mutate = \e -> BinOp e Sub (Lit $ Int 1) }
+zero = Mutation { applicable = is_int,
+                  mutate = \e -> Lit $ Int 0 }
+not = Mutation { applicable = is_bool,
+                 mutate = \e -> PreNot }
+left_proj = Mutation { applicable (BinOp e1 o e2) = True
+                       applicable _ = False,
+                       mutate (BinOp e1 o e2) = e1 }
+right_proj = Mutation { applicable (BinOp e1 o e2) = True
+                       applicable _ = False,
+                       mutate (BinOp e1 o e2) = e2 }
+strip_unop = Mutation { applicable (PostIncrement _) = True
+                        applicable (PostDecrement _) = True
+                        applicable (PreIncrement _) = True
+                        applicable (PreDecrement _) = True
+                        applicable (PrePlus _) = True
+                        applicable (PreMinus _) = True
+                        applicable (PreBitCompl _) = True
+                        applicable (PreNot _) = True
+                        applicable _ = False,
+
+                        mutate (PostIncrement e) = e
+                        mutate (PostDecrement e) = e
+                        mutate (PreIncrement e) = e
+                        mutate (PreDecrement e) = e
+                        mutate (PrePlus e) = e
+                        mutate (PreMinus e) = e
+                        mutate (PreBitCompl e) = e
+                        mutate (PreNot e) = e }
+                             -}             
+allMutations = [ plusOne ] --, subOne, zero, left_proj, right_proj, strip_unop ]
 
 mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) Exp
 mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
@@ -193,9 +229,9 @@ mutateProgram g str = case parser compilationUnit str of
                        Right tree -> let tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject tree))
                                          nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject tree))
                                          (i, g') = randomR (0,nExp-1) g
-                                         t = runReaderT (apply (mutateExp (i :: Int)) initialContext (inject tree)) tm
+                                         t = runReaderT (apply (mutateExp i) initialContext (inject tree)) tm
                                          t' = evalStateT t 0
-                                         (t'', g'') = runRandT t' g' in
-                                     (show $ pretty $ runKureM (\(GCompilationUnit c) -> c) (error "thing failed") t'',
-                                      g'')
+                                         t'' = runRandT t' g'
+                                         (t''', g'') = runKureM (\(GCompilationUnit c,h) -> (c,h)) (error "thing failed") t''  in
+                                     (show $ pretty t''' , g'')
                                 
