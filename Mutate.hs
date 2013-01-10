@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances, FlexibleContexts, MultiParamTypeClasses, UndecidableInstances, IncoherentInstances #-}
+    {-# LANGUAGE FlexibleInstances, TypeSynonymInstances, FlexibleContexts, MultiParamTypeClasses, UndecidableInstances, IncoherentInstances #-}
 
 module Mutate where
 
@@ -142,12 +142,8 @@ inferExp (ExpName (Name n)) = do bindings <- ask
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask
                                                   return $ maybe Top id $ Map.lookup (last n) bindings
 inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
-<<<<<<< HEAD
-inferExp e = fail ("unimplemented: " ++ show e)
-=======
 inferExp (ArrayCreate _ _ _) = return Top
 inferExp _ = fail "unimplemented"
->>>>>>> b98b66c2bf9d08e5d99c89422d5abc9740e1eb77
 
 showExpTypes' :: MonadReader TypeMap m => Translate Context m Exp String
 showExpTypes' = translate $ \_ e -> do t <- inferExp e

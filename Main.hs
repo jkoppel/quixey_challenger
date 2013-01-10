@@ -214,8 +214,6 @@ mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
                                             else
                                               do m <- lift $ lift $ randElt goodMutations
                                                  return $ mutate m e
->>>>>>> dcec8ab07fb6f674e51b15887ff20a42aeebc6a0
-                                       
 
 mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureMonad))) GenericJava
 mutateExp n = anybuR $ promoteR $ mutateExp' n
@@ -227,10 +225,6 @@ main = do fil <- liftM last getArgs
           case parser compilationUnit str of
                Left _ -> error "Parse error"
                Right tree -> do let tm = runKureMonad id (error "type map failed") (apply getTypeMap initialContext (inject tree))
-<<<<<<< HEAD
-                                putStrLn (runKureMonad id (error "showExpTypes failed") (runReaderT (apply showExpTypes initialContext (inject tree)) tm))
-                                return ()
-=======
                                     nExp = getSum $ runKureMonad id (error "count exp failed") (apply countExp initialContext (inject tree))
                                 i <- randomRIO (0,nExp-1)
                                 let t = runReaderT (apply (mutateExp i) initialContext (inject tree)) tm
@@ -238,4 +232,3 @@ main = do fil <- liftM last getArgs
                                     t'' = evalRandT t' g
                                 putStrLn $ show $ pretty $ runKureMonad (\(GCompilationUnit c) -> c) (error "thing failed") t''
                                 return ()
->>>>>>> dcec8ab07fb6f674e51b15887ff20a42aeebc6a0
