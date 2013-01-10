@@ -60,10 +60,10 @@ run_cases n prog make_in check_out = do
     results <- timeout (1000*1000) $ readProcessWithExitCode "java" [prog] input
     case results of
         Nothing -> return $ False
-        Just (exit, out, err) -> trace (show input ++ " ==> " ++ show out) (case exit of
+        Just (exit, out, err) -> case exit of
             ExitSuccess -> do
                 return $ and $ map (uncurry check_out) $ zip (lines input) (lines out)
-            ExitFailure _ -> trace (err++" "++input) (return $ False))
+            ExitFailure _ -> trace (err++" "++input) (return $ False)
 
 -- UTILITIES
 rList :: Int -> IO [Int]
