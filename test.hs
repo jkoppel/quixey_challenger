@@ -14,7 +14,8 @@ challenges = [("GCD", gcd_in, gcd_check),
               ("MAX_SUBSET", mw_in, mw_check),
               ("MOD_INVERSE", mod_inv_in, mod_inv_check),
               ("BINARY_SEARCH", binary_search_in, binary_search_check),
-              ("NESTED_PARENS", nested_parens_in, nested_parens_check)
+              ("NESTED_PARENS", nested_parens_in, nested_parens_check),
+              ("ADD", add_in, add_check)
              ]
 
 test_cases = 100
@@ -23,7 +24,7 @@ max_int = 1000*1000
 
 -- MAIN CODE
 main = do
-    fix 2
+    fix 5
 
 fix :: Int -> IO ()
 fix n = do
@@ -38,13 +39,16 @@ fix n = do
 
 loop :: Int -> String -> StdGen -> IO ()
 loop n program rng = do
+    removeFile file
     writeFile file mutated
+    str <- readFile file
     p <- runCommand ("javac " ++ file)
-    waitForProcess p
-    good <- run_cases test_cases file input output
+    trace str (waitForProcess p)
+    good <- run_cases test_cases name input output
+    putStrLn $ show good
     if good
     then return ()
-    else trace mutated (loop n program rng')
+    else loop n program rng'
     where
     (name, input, output) = challenges !! n
     file = name ++ ".java"
@@ -59,7 +63,7 @@ run_cases n prog make_in check_out = do
         Just (exit, out, err) -> case exit of
             ExitSuccess -> do
                 return $ and $ map (uncurry check_out) $ zip (lines input) (lines out)
-            ExitFailure _ -> return $ False
+            ExitFailure _ -> trace (err) (return $ False)
 
 -- UTILITIES
 rList :: Int -> IO [Int]
@@ -183,3 +187,15 @@ check_nested [] _ = 0
 check_nested _ n | n < 0 = 0
 check_nested ('(' : xs) n = check_nested xs (n+1)
 check_nested (')' : xs) n = check_nested xs (n-1)
+
+--ADD
+add_in = do
+    x <- randomRIO (1 :: Int, 50)
+    y <- randomRIO (1 :: Int, 50)
+    return $ ints_to_spaces [x,y]
+
+add_check input output = correct == ans
+    where
+    [x,y] = spaces_to_ints input
+    [ans] = spaces_to_ints output
+    correct = x+y

@@ -11,15 +11,19 @@ public class MOD_INVERSE
     {
       int base = in.nextInt();
       int mod = in.nextInt();
-      System.out.println(inverse(base + 1, mod));
+      System.out.println(inverse(base, mod));
     }
-    static int inverse(int base, int mod) {
-        if(base == 1) {
-            return base;
-        } else {
-            int coeff = base - inverse(mod%base, base);
-            return (coeff*mod)/base;
-        }
+  }
+  static int inverse (int base, int mod)
+  {
+    if (base == 1)
+    {
+      return base;
+    }
+    else
+    {
+      int coeff = base - inverse(mod % base + 1, base);
+      return coeff * mod / base;
     }
   }
 }

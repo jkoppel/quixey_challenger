@@ -138,9 +138,13 @@ inferExp (BinOp e o _) = do t <- inferExp e
 inferExp (Cond _ e _) = inferExp e
 inferExp (Assign _ _ e) = inferExp e
 inferExp (ExpName (Name n)) = do bindings <- ask
-                                 return $ fromJust $ Map.lookup (last n) bindings
+                                 case Map.lookup (last n) bindings of
+                                     Nothing -> error "Oops"
+                                     Just x -> return x
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask
-                                                  return $ fromJust $ Map.lookup (last n) bindings
+                                                  case Map.lookup (last n) bindings of
+                                                    Nothing -> return Top
+                                                    Just x -> return x
 inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
 inferExp _ = fail "unimplemented"
 
