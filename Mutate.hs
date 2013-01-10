@@ -138,9 +138,9 @@ inferExp (BinOp e o _) = do t <- inferExp e
 inferExp (Cond _ e _) = inferExp e
 inferExp (Assign _ _ e) = inferExp e
 inferExp (ExpName (Name n)) = do bindings <- ask
-                                 return $ fromJust $ Map.lookup (last n) bindings
+                                 return $ maybe (error ("did not find " ++ (show n))) id $ Map.lookup (last n) bindings
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask
-                                                  return $ fromJust $ Map.lookup (last n) bindings
+                                                  return $ maybe Top id $ Map.lookup (last n) bindings
 inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
 inferExp _ = fail "unimplemented"
 
@@ -176,32 +176,37 @@ zero = Mutation { applicable = is_int,
                   mutate = \e -> Lit $ Int 0 }
 not = Mutation { applicable = is_bool,
                  mutate = \e -> PreNot }
-left_proj = Mutation { applicable (BinOp e1 o e2) = True
-                       applicable _ = False,
-                       mutate (BinOp e1 o e2) = e1 }
-right_proj = Mutation { applicable (BinOp e1 o e2) = True
-                       applicable _ = False,
-                       mutate (BinOp e1 o e2) = e2 }
-strip_unop = Mutation { applicable (PostIncrement _) = True
-                        applicable (PostDecrement _) = True
-                        applicable (PreIncrement _) = True
-                        applicable (PreDecrement _) = True
-                        applicable (PrePlus _) = True
-                        applicable (PreMinus _) = True
-                        applicable (PreBitCompl _) = True
-                        applicable (PreNot _) = True
-                        applicable _ = False,
 
-                        mutate (PostIncrement e) = e
-                        mutate (PostDecrement e) = e
-                        mutate (PreIncrement e) = e
-                        mutate (PreDecrement e) = e
-                        mutate (PrePlus e) = e
-                        mutate (PreMinus e) = e
-                        mutate (PreBitCompl e) = e
-                        mutate (PreNot e) = e }
-                             -}             
-allMutations = [ plusOne ] --, subOne, zero, left_proj, right_proj, strip_unop ]
+left_proj = Mutation { applicable = \e -> case e of
+                                           (BinOp e1 o e2) -> True
+                                           _ -> False,
+                       mutate = \(BinOp e1 o e2) -> e1 }
+right_proj = Mutation { applicable = (\e -> case e of
+                                              (BinOp e1 o e2) -> True
+                                               _ -> False),
+                       mutate = \(BinOp e1 o e2) -> e2 }
+strip_unop = Mutation { applicable = \e -> case e of
+                                                PostIncrement _ -> True
+                                                PostDecrement _ -> True
+                                                PreIncrement _ -> True
+                                                PreDecrement _ -> True
+                                                PrePlus _ -> True
+                                                PreMinus _ -> True
+                                                PreBitCompl _ -> True
+                                                PreNot _ -> True
+                                                _ -> False,
+
+                        mutate = \e -> case e of
+                               PostIncrement e -> e
+                               PostDecrement e -> e
+                               PreIncrement e -> e
+                               PreDecrement e -> e
+                               PrePlus e -> e
+                               PreMinus e -> e
+                               PreBitCompl e -> e
+                               PreNot e -> e }
+-}
+allMutations = [ plusOne ]--, subOne, zero, left_proj, right_proj, strip_unop ]
 
 mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) Exp
 mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
