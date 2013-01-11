@@ -15,16 +15,17 @@ challenges = [("GCD", gcd_in, gcd_check),
               ("MOD_INVERSE", mod_inv_in, mod_inv_check),
               ("BINARY_SEARCH", binary_search_in, binary_search_check),
               ("NESTED_PARENS", nested_parens_in, nested_parens_check),
-              ("ADD", add_in, add_check)
+              ("ADD", add_in, add_check),
+              ("NEXT_PAL", next_pal_in, next_pal_check)
              ]
 
-test_cases = 1000
+test_cases = 10000
 max_array_size = 6
 max_int = 1000*1000
 
 -- MAIN CODE
 main = do
-    fix 1
+    fix 6
     --good <- run_cases test_cases "MOD_INVERSE" mod_inv_in mod_inv_check
     --putStrLn $ show good
 
@@ -63,28 +64,28 @@ run_cases :: Int -> String -> IO String -> (String -> String -> Bool) -> IO Bool
 run_cases n prog make_in check_out = do
     input <- liftM unlines $ mapM (\_ -> make_in) [1..n]
     putStrLn "RUNNING PROGRAM"
-    results <- timeout (1000*1000) $ readProcessWithExitCode "java" [prog] input
+    results <- timeout (2*1000*1000) $ readProcessWithExitCode "java" [prog] input
     putStrLn "RAN PROGRAM"
     case results of
         Nothing -> return $ False
         Just (exit, out, err) -> case exit of
             ExitSuccess -> do
                 return $ and $ map (uncurry check_out) $ zip (lines input) (lines out)
-            ExitFailure _ -> trace (err) (return $ False)
+            ExitFailure _ -> return $ False
 
 -- UTILITIES
-rList :: Int -> IO [Int]
-rList 0 = return $ []
-rList n = do
-    x <- randomRIO (1 :: Int, max_int)
-    lst <- rList (n-1)
+rList :: Int -> Int -> Int -> IO [Int]
+rList 0 _ _ = return $ []
+rList n lo hi = do
+    x <- randomRIO (lo, hi)
+    lst <- rList (n-1) lo hi
     return $ x:lst
 
 ints_to_spaces [] = ""
 ints_to_spaces [x] = show x
 ints_to_spaces (x:xs) = show x ++ " " ++ ints_to_spaces xs
 
-spaces_to_ints str = map (\x -> read x :: Int) (splitOn " " str)
+spaces_to_ints str = map (\x -> read x :: Int) (words str)
 
 sorted_list :: Int -> Int -> Int -> IO [Int]
 sorted_list 0 _ _ = return $ []
@@ -132,7 +133,7 @@ mod_inv base mod n =
 mw_in :: IO String
 mw_in = do
     n <- randomRIO (1 :: Int, max_array_size)
-    lst <- rList (n+1)
+    lst <- rList (n+1) 1 (1000*1000)
     return $ ints_to_spaces lst
 
 mw_check input output = correct == ans
@@ -206,3 +207,27 @@ add_check input output = correct == ans
     [x,y] = spaces_to_ints input
     [ans] = spaces_to_ints output
     correct = x+y
+
+--NEXT PAL
+next_pal_in = do
+    n <- randomRIO (1 :: Int, 2)
+    lst <- rList n 1 9
+    mid <- randomIO
+    midx <- randomRIO (1,9)
+    final_lst <- return $ lst ++ (if mid then [midx] else []) ++ (reverse lst)
+    return $ ints_to_spaces final_lst
+
+next_pal_check input output = correct == ans
+    where
+    n = to_integer (spaces_to_ints input) 0
+    correct = next_pal (n+1)
+    ans = to_integer (spaces_to_ints output) 0
+
+    to_integer [] a = a
+    to_integer (x:xs) a = to_integer xs (10*a+x)
+
+    is_pal n = (reverse strn) == strn
+        where
+        strn = show n
+
+    next_pal n = if (is_pal n) then n else next_pal (n+1)
