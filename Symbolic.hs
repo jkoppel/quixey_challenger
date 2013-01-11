@@ -201,11 +201,11 @@ symbExp (Cond e1 e2 e3) = do
     v <- tempVar ZInt
     zAssert $ ZBinOp "=" (ZVar v) (ZIte (ZVar v1) (ZVar v2) (ZVar v3))
     return v
-symbExp (BinOp e1 Equal e2) = do
+symbExp (BinOp e1 o e2) | opType o == ZBool = do
     v1 <- symbExp e1
     v2 <- symbExp e2
     v <- tempVar ZBool
-    zAssert $ ZBinOp "=" (ZVar v) (ZBinOp "=" (ZVar v1) (ZVar v2))
+    zAssert $ ZBinOp "=" (ZVar v) (ZBinOp (opName o) (ZVar v1) (ZVar v2))
     return v
 symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
                              v2 <- symbExp e2
@@ -225,8 +225,23 @@ opName :: Op -> String
 opName Mult = "bvmul"
 opName Add = "bvadd"
 opName Sub = "bvsub"
-opName Equal = "="
 opName Div = "bvsdiv"
+opName Equal = "="
+opName LThan = "bvslt"
+opName GThan = "bvsgt"
+opName CAnd = "and"
+opName COr = "or"
+
+opType :: Op -> ZType
+opType Mult = ZInt
+opType Add = ZInt
+opType Sub = ZInt
+opType Div = ZInt
+opType Equal = ZBool
+opType LThan = ZBool
+opType GThan = ZBool
+opType CAnd = ZBool
+opType COr = ZBool
 
 symbType :: Type -> ZType
 symbType (PrimType IntT) = ZInt
