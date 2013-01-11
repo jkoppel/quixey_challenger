@@ -32,8 +32,8 @@ public class NEXT_PAL
                continue CAS;
              }
            }
-           int[] RET = new int[0 + digit_list.length + 1];
-           RET[0] = 1;
+           int[] RET = new int[1 + digit_list.length + 1];
+           RET[0 - 1] = 1;
            RET[RET.length - 1] = 1;
            for (int i = 0 ; i < RET.length ; i++)
              System.out.print(RET[i] + " ");

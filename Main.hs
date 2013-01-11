@@ -223,7 +223,7 @@ main = do fil <- liftM last getArgs
           str <- readFile fil
           g <- getStdGen
           case parser compilationUnit str of
-               Left _ -> error "Parse error"
+               Left _ -> error $ "Parse error" ++ str
                Right tree -> do let tm = runKureMonad id (error "type map failed") (apply getTypeMap initialContext (inject tree))
                                     nExp = getSum $ runKureMonad id (error "count exp failed") (apply countExp initialContext (inject tree))
                                 i <- randomRIO (0,nExp-1)

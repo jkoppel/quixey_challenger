@@ -3,15 +3,86 @@ import System.IO
 import System.Random
 import System.Exit
 import Control.Monad
---import Debug.Trace
+import Debug.Trace
 import Data.Int
 import Data.List.Split
 import System.Timeout
 import System.Directory
 import Mutate
+import Data.Text (pack, unpack,  strip)
+import Data.Text.Read (hexadecimal)
+import qualified Data.Map as M
 
-trace a b = b
+import Language.Java.Syntax
+import Language.Java.Pretty
+import Symbolic
+import Sketch
 
+main = mainLoop "DOUBLE.java"
+
+mainLoop :: String -> IO ()
+mainLoop file = do
+    program <- readFile file
+    (state, ideas) <- return $ genSketches program "main"
+    best <- test_ideas state ideas
+    case best of
+        Nothing -> putStrLn "failed"
+        Just (code, model) -> do
+            final_code <- return $ constFold model code
+            putStrLn ((show model) ++ " " ++ (prettyPrint code))
+
+test_ideas :: SketchState -> [MemberDecl] -> IO (Maybe (MemberDecl, M.Map String Int))
+test_ideas st [] = return $ Nothing
+test_ideas st (idea:ideas) = do
+    result <- test_idea st idea
+    case result of
+        Nothing -> test_ideas st ideas
+        Just model -> return $ Just (idea, model) 
+        
+test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
+test_idea st idea = do
+    tests <- mapM (\_ -> make_in) [1..10]
+    z3in <- return $ evalSketch idea st tests
+    writeFile "z3.smt2" z3in
+    (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
+    putStrLn (out ++ " " ++ (show exit))
+    (head:model) <- return $ lines out
+    trace err (if head == "unsat"
+    then return Nothing
+    else return $ Just (str_to_map $ tail model))
+
+make_in :: IO ([Int], Int)
+make_in = do
+    x <- randomRIO (1 :: Int, 1000) 
+    return $ ([x], 2*x)
+        
+str_to_map :: [String] -> M.Map String Int
+str_to_map [] = M.empty
+str_to_map [x] = M.empty
+str_to_map (x:y:rest) = M.insert var val m
+    where
+    var = trace y $ (words x) !! 1
+    val = if ylen == 1 then yval else -yval
+    ylen = length $ words y
+    yval = if ylen == 1 then to_int y else to_int $ (words y) !! 1
+    m = str_to_map rest
+
+to_int :: String -> Int
+to_int s = ans
+    where
+    trimmed = unpack $ strip $ pack $ s
+    drop_sharp = drop 2 trimmed
+    drop_paren = init $ drop_sharp
+    Right (ans, _) = hexadecimal $ pack $ drop_paren
+        
+    
+constFold = undefined
+
+test_cases = 10000
+max_array_size = 6
+max_int = 1000*1000
+
+-- MAIN CODE
 challenges = [("GCD", gcd_in, gcd_check),
               ("MAX_SUBSET", mw_in, mw_check),
               ("MOD_INVERSE", mod_inv_in, mod_inv_check),
@@ -20,16 +91,11 @@ challenges = [("GCD", gcd_in, gcd_check),
               ("ADD", add_in, add_check),
               ("NEXT_PAL", next_pal_in, next_pal_check)
              ]
-
-test_cases = 10000
-max_array_size = 6
-max_int = 1000*1000
-
--- MAIN CODE
-main = do
+{-main = do
     fix 6
     --good <- run_cases test_cases "MOD_INVERSE" mod_inv_in mod_inv_check
     --putStrLn $ show good
+-}
 
 fix :: Int -> IO ()
 fix n = do

@@ -192,6 +192,8 @@ evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (start
   where
     runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests
+                  addZ3 CheckSat
+                  addZ3 GetModel
                   return ()
 
 {-
