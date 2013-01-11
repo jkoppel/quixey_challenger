@@ -121,7 +121,7 @@ symbStmt (ExpStmt e) = do symbExp e
 symbStmt (Return (Just e)) = do v <- symbExp e
                                 g <- gets pathGuard
                                 r <- gets retVar
-                                zAssert $ ZBinOp "==>" g (ZBinOp "=" (ZVar r) (ZVar v))
+                                zAssert $ ZBinOp "=>" g (ZBinOp "=" (ZVar r) (ZVar v))
                                 return ()
 
 symbVarDecl :: Type -> VarDecl -> Symb ()
