@@ -137,6 +137,7 @@ inferExp (BinOp e o _) = do t <- inferExp e
                             return $ inferOp t o
 inferExp (Cond _ e _) = inferExp e
 inferExp (Assign _ _ e) = inferExp e
+inferExp (ExpName (Name [_,_])) = return $ Base $ PrimType $ IntT
 inferExp (ExpName (Name n)) = do bindings <- ask
                                  return $ maybe (error ("did not find " ++ (show n))) id $ Map.lookup (last n) bindings
 inferExp (MethodInv (MethodCall (Name n) _)) = do bindings <- ask

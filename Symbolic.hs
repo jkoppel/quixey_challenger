@@ -14,7 +14,7 @@ import Debug.Trace
 
 import Sketch
 
-maxUnrollDepth = 1
+maxUnrollDepth = 3
 
 data ZType = ZInt | ZBool | ZArray ZType ZType
              deriving (Show, Eq)
@@ -236,7 +236,7 @@ symbExp (ArrayAccess (ArrayIndex arr n)) = do
     select arr n upper =
         ZIte (ZBinOp "and" (ZBinOp "bvsge" (ZVar n) (symbLit $ Int 0)) (ZBinOp "bvslt" (ZVar n) (ZVar upper)))
              (ZSelect (ZVar arr) (ZVar n))
-             (symbLit $ Int 0)
+             (symbLit $ Int 123)
 {-
 
 ArrayCreate Type [Exp] Int

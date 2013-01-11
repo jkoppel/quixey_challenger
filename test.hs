@@ -22,9 +22,20 @@ import Sketch
 
 main = mainLoop "NESTED_PARENS.java"
 
+paren_test = [
+              ([0], 1),
+              ([1,1],0),
+              ([1,-1],0),
+              ([2,1,1],0),
+              ([2,1,-1],1),
+              --([2,-1,1],0)
+              ([2,-1,-1],0)
+             ]
+
 make_in = do
-    n <- randomRIO (1 :: Int, 10)
+    n <- randomRIO (0 :: Int, 2)
     xs <- binary n
+    fst <- return $ head xs
     return $ (n:xs, is_nested xs 0)
 
 binary :: Int -> IO [Int]
@@ -42,13 +53,13 @@ is_nested (-1:xs) n = is_nested xs (n-1)
 
 mainLoop :: String -> IO ()
 mainLoop file = do
+ --   putStrLn $ show $ map (\(x,_) -> is_nested (tail x) 0) paren_test
     program <- readFile file
     (state, ideas) <- return $ genSketches program "is_ok"
-    best <- test_ideas state ideas
+    best <- test_ideas state (reverse ideas)
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
-            putStrLn $ show model
             final_code <- return $ (constantFold model code) :: IO MemberDecl
             putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
@@ -62,9 +73,9 @@ test_ideas st (idea:ideas) = do
         
 test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
 test_idea st idea = do
-    tests <- mapM (\_ -> make_in) [1..4]
+    tests <- return $ paren_test --mapM (\_ -> make_in) [1..10]
     z3in <- return $ evalSketch idea st tests
-    putStrLn (show tests)
+    putStrLn ("A: "++show tests)
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     (head:model) <- return $ lines out
