@@ -8,19 +8,19 @@ public class NESTED_PARENS {
         for(int i=0; i<S.length(); i++)
             num[i] = S.charAt(i)=='(' ? 1 : -1;
 
-        System.out.println(is_ok(num)==1 ? "GOOD" : "BAD");
+        System.out.println(is_properly_nested(num)==1 ? "GOOD" : "BAD");
     }
 
-    public static int is_ok(int[] A) {
-        int depth;
-        int i;
-        depth = 0;
-        i = 0;
+    public static int is_properly_nested(int[] A) {
+        int bad = 0;
+        int depth = 0;
+        int i = 0;
         while(i < A.length) {
-            depth = depth + A[i];
-            if(depth < 0) { return 0; }
-            i = i + 1;
+            depth += A[i];
+            if(depth < 0) { bad = 1; }
+            i+=1;
         }
-        return 1;
+        if(bad==1) return 0;
+        else return 1;
     }
 }

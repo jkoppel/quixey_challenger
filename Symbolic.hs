@@ -14,7 +14,7 @@ import Debug.Trace
 
 import Sketch
 
-maxUnrollDepth = 3
+maxUnrollDepth = 2
 
 data ZType = ZInt | ZBool | ZArray ZType ZType
              deriving (Show, Eq)
@@ -66,7 +66,6 @@ instance Pretty Z3 where
   pretty (ZNot z) = "(not " ++ (pretty z) ++ ")"
   pretty (ZIte z1 z2 z3) = "(ite " ++ (pretty z1) ++ " " ++ (pretty z2) ++ " " ++ (pretty z3) ++ ")"
   pretty (ConstArray n) = "((as const (Array (_ BitVec 32) (_ BitVec 32))) " ++ (show n) ++ ")"
-  --(assert (= all1 ((as const (Array Int Int)) 1)))
   pretty CheckSat = "(check-sat)"
   pretty GetModel = "(get-model)"
 
@@ -212,11 +211,14 @@ symbVarDecl :: Type -> VarDecl -> Symb ()
 symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do 
     overwriteVar n ZInt
     n' <- getVar n
-    case vinit of
+    zAssert $ ZBinOp "=" (ZVar n') (BV32 0)
+    {-case vinit of
          Nothing -> return ()
          Just (InitExp e) -> do 
+            overwriteVar n ZInt
+            n'' <- getVar n
             v <- symbExp e
-            zAssert $ ZBinOp "=" (ZVar n') (ZVar v)
+            zAssert $ ZBinOp "=" (ZVar n'') (ZVar v)-}
 
 symbExp :: Exp -> Symb String
 {-symbExp (ArrayCreate _ [_] 0) = do
@@ -258,7 +260,7 @@ ArrayAccess (ArrayIndex arr n)
     return v
 -}    
 
-symbExp (PostIncrement (ExpName (Name [Ident v]))) = symbExp $ Assign (NameLhs (Name [Ident v])) AddA (Lit $ Int 1)
+--symbExp (PostIncrement (ExpName (Name [Ident v]))) = symbExp $ Assign (NameLhs (Name [Ident v])) AddA (Lit $ Int 1)
 symbExp (Assign (NameLhs (Name [Ident v])) AddA e) = symbExp $ Assign (NameLhs (Name [Ident v])) EqualA (BinOp e Add (ExpName (Name [Ident v])))
 symbExp (Assign (NameLhs (Name [Ident v])) EqualA e) = symbAssign v e
 symbExp (Lit l) = do v <- tempVar (litType l)

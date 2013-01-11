@@ -28,7 +28,7 @@ paren_test = [
               ([1,-1],0),
               ([2,1,1],0),
               ([2,1,-1],1),
-              --([2,-1,1],0)
+              ([2,-1,1],0),
               ([2,-1,-1],0)
              ]
 
@@ -53,10 +53,9 @@ is_nested (-1:xs) n = is_nested xs (n-1)
 
 mainLoop :: String -> IO ()
 mainLoop file = do
- --   putStrLn $ show $ map (\(x,_) -> is_nested (tail x) 0) paren_test
     program <- readFile file
-    (state, ideas) <- return $ genSketches program "is_ok"
-    best <- test_ideas state (reverse ideas)
+    (state, ideas) <- return $ genSketches program "is_properly_nested"
+    best <- test_ideas state ideas
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
@@ -68,14 +67,14 @@ test_ideas st [] = return $ Nothing
 test_ideas st (idea:ideas) = do
     result <- test_idea st idea
     case result of
-        Nothing -> test_ideas st ideas
+        Nothing -> test_ideas st (reverse ideas)
         Just model -> return $ Just (idea, model) 
         
 test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
 test_idea st idea = do
+    putStrLn $ prettyPrint idea
     tests <- return $ paren_test --mapM (\_ -> make_in) [1..10]
-    z3in <- return $ evalSketch idea st tests
-    putStrLn ("A: "++show tests)
+    z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests))
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     (head:model) <- return $ lines out
