@@ -72,11 +72,11 @@ tempVar t = do n <- gets counter
 
 isSketchVar :: String -> Symb Bool
 isSketchVar n = do vs <- gets (sketchVars . sketchState)
-                   return $ Set.Mmember vs n
+                   return $ Set.member n vs
 
 getVar :: String -> Symb String
 getVar n = do m <- gets varLab
-              b <- isSketchVar
+              b <- isSketchVar n
               if b
                  then
                    return n
@@ -184,14 +184,14 @@ declare n = do addZ3 $ DeclareConst n ZInt
 
 declareSketchVars :: Symb ()
 declareSketchVars = do skvs <- gets (sketchVars . sketchState)
-                       mapM_ declare skvs
+                       mapM_ declare (Set.toList skvs)
                        return ()
 
 evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> String
-evalSketch dec skst tests = execState runTests (startState skst)
+evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (startState skst)
   where
     runTests = do declareSketchVars
-                  mapM_ (uncurry $ symbtest dec) tests
+                  mapM_ (uncurry $ symbTest dec) tests
                   return ()
 
 {-

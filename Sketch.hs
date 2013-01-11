@@ -18,7 +18,7 @@ import Mutate hiding (not)
 
 data SketchState = SketchState {
                           sketchVars :: Set.Set String
-                   }
+                   } deriving (Show)
 
 findMethod' :: String -> TranslateJ MemberDecl MemberDecl
 findMethod' n = translate $ \_ d -> case d of
@@ -56,7 +56,7 @@ replaceExp n e = anybuR $ promoteR $ replaceExp' n e
 doReplaceExp :: MemberDecl -> Int -> Exp -> MemberDecl
 doReplaceExp d i e = let tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject d))
                          t = runReaderT (apply (replaceExp i e) initialContext (inject d)) tm
-                         t' = evalState t 0 in
+                         t' = evalStateT t 0 in
                      runKureM (\(GMemberDecl c) -> c) (error "memberdecl proj failed") t'
 
 genSketches :: String -> String -> (SketchState, [MemberDecl])
