@@ -175,6 +175,7 @@ opName Mult = "bvmul"
 opName Add = "bvadd"
 opName Sub = "bvsub"
 opName Equal = "="
+opName Div = "bvsdiv"
 
 symbType :: Type -> ZType
 symbType (PrimType IntT) = ZInt
@@ -214,6 +215,7 @@ evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (start
                   addZ3 CheckSat
                   addZ3 GetModel
                   return ()
+
 
 {-
 myMeth = MethodDecl [] [] Nothing (Ident "foo") [FormalParam [] (PrimType IntT) False (VarId $ Ident "x")] [] $ MethodBody $ Just $ Block [BlockStmt $ Return $ Just $ BinOp (ExpName (Name [Ident "x"])) Mult (Lit (Int 3))]
