@@ -1,6 +1,7 @@
 module Sketch where
 
 import qualified Data.Set as Set
+import qualified Data.Map as Map
 import Data.Monoid
 
 import Control.Monad.Reader
@@ -17,8 +18,56 @@ import KureCong
 import Mutate hiding (not)
 
 data SketchState = SketchState {
-                          sketchVars :: Set.Set String
+                          sketchVars :: Set.Set String,
+                          nVars :: Int
                    } deriving (Show)
+
+type Sketch = State SketchState
+
+startSketchState = SketchState  {
+                                sketchVars = Set.empty,
+                                nVars = 0
+                 }
+
+newSketchVar :: Sketch String
+newSketchVar = do n <- gets nVars
+                  modify (\s -> s {nVars=n+1})
+                  vs <- gets sketchVars
+                  let nv = "sketch" ++ (show n)
+                  modify (\s -> s {sketchVars=Set.insert nv vs})
+                  return nv
+
+sketchConst :: Sketch Exp
+sketchConst = do v <- newSketchVar
+                 return (ExpName $ Name [Ident v])
+
+sketchOp :: Op -> Sketch Exp -> Sketch Exp -> Sketch Exp
+sketchOp o e1 e2 = do e1' <- e1
+                      e2' <- e2
+                      return $ BinOp e1' o e2'
+
+
+
+alternatives :: [Sketch Exp] -> Sketch Exp
+alternatives es = do es' <- sequence es
+                     v <- newSketchVar
+                     return $ foldr (\c (e,i) -> Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int i)) e c)
+                                (head es')
+                                (zip [0..] (tail es'))
+
+sketchVar :: Map.Map String a -> Sketch Exp
+sketchVar m = alternatives (map (\v -> ExpName $ Name [Ident v]) (map fst $ Map.toList m))
+
+boundedExp :: Map.Map String a -> Int -> Sketch Exp
+boundedExp m 0 = alternatives [sketchConst, sketchVar m]
+boundedExp m n = alternatives [sketchConst,
+                               sketchVar,
+                               sketchOp Add e e,
+                               sketchOp Sub e e,
+                               sketchOp Mult e e,
+                               sketchOp Div e e]
+              where
+                e = boundedExp m (n-1)
 
 findMethod' :: String -> TranslateJ MemberDecl MemberDecl
 findMethod' n = translate $ \_ d -> case d of
@@ -31,9 +80,8 @@ findMethod n = onetdT $ promoteT (findMethod' n)
 getMethod :: String -> CompilationUnit -> MemberDecl
 getMethod interest prog = runKureM id (error "did not find method") (apply (findMethod interest) initialContext (inject prog))
 
-makeSketchExp :: MemberDecl -> (SketchState, Exp)
-makeSketchExp _ = (SketchState {sketchVars = Set.singleton "sketch"},
-                     ExpName $ Name [Ident "sketch"])
+makeSketchExp :: MemberDecl -> Map.Map String a -> (SketchState, Exp)
+makeSketchExp d m = swap $ runState (boundedExp m 3) startSketchState
 
 replaceExp' :: Int -> Exp -> Rewrite Context (ReaderT TypeMap (StateT Int KureM)) Exp
 replaceExp' n f = translate $ \_ e -> do l <- lift nextLabel
@@ -63,7 +111,8 @@ genSketches :: String -> String -> (SketchState, [MemberDecl])
 genSketches src interest = case parser compilationUnit src of
                               Left _ -> error "Parse error"
                               Right tree -> let m = getMethod interest tree
-                                                (skst, sexp) = makeSketchExp m
+                                                tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject m))
+                                                (skst, sexp) = makeSketchExp m tm
                                                 nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject m))
                                                 sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]] in
                                               (skst, sketches)
