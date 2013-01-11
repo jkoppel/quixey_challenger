@@ -8,3 +8,20 @@ Smart: Non-determinize random lines (this is just exhaustively doing the above?)
 
 
 MOD_INVERSE is wrong, consider BASE = 1. All we require is BASE > 0, MOD > 0, (BASE,MOD)=1
+
+
+----
+
+In Mutate:
+
+genSketches :: String -> String -> (SketchState, [MemberDecl])
+Takes a program and the name of the method we care about. Gives list of methods; each with an expression replaced with a sketched expression. SketchState is a type to be defined
+
+evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> String
+Generates SMT2 code running a sketch program
+
+sketchVars :: SketchState -> Set.Set String
+Set of "interesting" variables
+
+constFold :: Map.Map String Int -> MemberDecl -> MemberDecl
+Constant folding

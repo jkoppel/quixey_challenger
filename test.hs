@@ -3,12 +3,14 @@ import System.IO
 import System.Random
 import System.Exit
 import Control.Monad
-import Debug.Trace
+--import Debug.Trace
 import Data.Int
 import Data.List.Split
 import System.Timeout
 import System.Directory
 import Mutate
+
+trace a b = b
 
 challenges = [("GCD", gcd_in, gcd_check),
               ("MAX_SUBSET", mw_in, mw_check),
@@ -43,6 +45,7 @@ loop :: Int -> String -> StdGen -> IO ()
 loop n program rng = do
     removeFile file
     writeFile file mutated
+    putStrLn "COMPILING"
     p <- runCommand ("javac " ++ file)
     javac <- trace mutated (waitForProcess p)
     case javac of
