@@ -8,6 +8,8 @@ import qualified Data.Set as Set
 
 import Language.Java.Syntax hiding (Assert)
 
+import Sketch
+
 data ZType = ZInt | ZBool
              deriving (Show, Eq)
 
@@ -26,7 +28,7 @@ data SymbState = SymbState { counter :: Int,
                              pathGuard :: Z3,
                              retVar :: String,
                              varLab :: Map.Map String Int,
-                             sketchVars :: Set.Set String
+                             sketchState :: SketchState
                              } deriving (Show)
 
 class Pretty a where
@@ -45,13 +47,13 @@ instance Pretty Z3 where
   pretty CheckSat = "(check-sat)"
   pretty GetModel = "(get-model)"
 
-startState :: SymbState
-startState = SymbState {counter = 0,
-                        z3 = [],
-                        pathGuard = ZVar "true",
-                        retVar = "",
-                        varLab = Map.empty,
-                        sketchVars :: Set.empty}
+startState :: SketchState -> SymbState
+startState skst = SymbState {counter = 0,
+                             z3 = [],
+                             pathGuard = ZVar "true",
+                             retVar = "",
+                             varLab = Map.empty,
+                             sketchState = skst}
 
 type Symb = State SymbState
 
@@ -68,11 +70,20 @@ tempVar t = do n <- gets counter
                addZ3 $ DeclareConst v t
                return v
 
+isSketchVar :: String -> Symb Bool
+isSketchVar n = do vs <- gets (sketchVars . sketchState)
+                   return $ Set.Mmember vs n
+
 getVar :: String -> Symb String
 getVar n = do m <- gets varLab
-              case Map.lookup n m of
-                   Nothing -> error "Looking up undeclared variable"
-                   Just k -> return $ n ++ "_" ++ (show k)
+              b <- isSketchVar
+              if b
+                 then
+                   return n
+                 else
+                  case Map.lookup n m of
+                      Nothing -> error "Looking up undeclared variable"
+                      Just k -> return $ n ++ "_" ++ (show k)
 
 overwriteVar :: String -> Symb ()
 overwriteVar n = do m <- gets varLab
@@ -167,9 +178,26 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do ov
     argNames = map (\(FormalParam _ _ _ (VarId (Ident n))) -> n) args
     expInputs = map (Lit . Int . toInteger) inputs
 
+declare :: String -> Symb ()
+declare n = do addZ3 $ DeclareConst n ZInt
+               return ()
 
+declareSketchVars :: Symb ()
+declareSketchVars = do skvs <- gets (sketchVars . sketchState)
+                       mapM_ declare skvs
+                       return ()
+
+evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> String
+evalSketch dec skst tests = execState runTests (startState skst)
+  where
+    runTests = do declareSketchVars
+                  mapM_ (uncurry $ symbtest dec) tests
+                  return ()
+
+{-
 myMeth = MethodDecl [] [] Nothing (Ident "foo") [FormalParam [] (PrimType IntT) False (VarId $ Ident "x")] [] $ MethodBody $ Just $ Block [BlockStmt $ Return $ Just $ BinOp (ExpName (Name [Ident "x"])) Mult (Lit (Int 3))]
 myTest = do symbTest myMeth [1] 2
             symbTest myMeth [2] 4
             return ()
 runTest = runState myTest startState
+-}
