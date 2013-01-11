@@ -259,7 +259,6 @@ fold_it e m = case e of
                   case Map.lookup v m of
                        Just n -> Lit $ Int (fromIntegral n)
                        Nothing -> e
-        {-               
         BinOp e1 Equal e2 -> case (e1', e2') of
             (Lit (Boolean b1), Lit (Boolean b2)) -> Lit $ Boolean $ b1==b2
             (Lit (Int n1), Lit (Int n2)) -> Lit $ Boolean $ n1==n2
@@ -273,7 +272,6 @@ fold_it e m = case e of
             _ -> Cond e1' e2' e3'
             where
             [e1', e2', e3'] = map (\x -> fold_it x m) [e1, e2, e3]
-            -}
         _ -> e
 
 constantFold'' :: Map.Map String Int -> Rewrite Context KureM GenericJava
