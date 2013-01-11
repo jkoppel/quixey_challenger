@@ -42,7 +42,11 @@ instance Pretty Z3 where
   pretty (Assert z) = "\n(assert " ++ (pretty z) ++ ")"
   pretty (DeclareConst v t) = "\n(declare-const " ++ v ++ " " ++ (pretty t) ++ ")"
   pretty (ZVar s) = s
-  pretty (BV32 n) = "(_ bv" ++ (show n) ++ " 32)"
+  pretty (BV32 n) = if n >= 0
+                      then
+                        "(_ bv" ++ (show n) ++ " 32)"
+                      else
+                        "(bvneg " ++ (pretty (BV32 (-n))) ++ ")"
   pretty (ZBinOp s z1 z2) = "(" ++ s ++ " " ++ (pretty z1) ++ " " ++ (pretty z2) ++ ")"
   pretty CheckSat = "(check-sat)"
   pretty GetModel = "(get-model)"
