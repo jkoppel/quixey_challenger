@@ -24,7 +24,7 @@ max_int = 1000*1000
 
 -- MAIN CODE
 main = do
-    fix 3
+    fix 1
     --good <- run_cases test_cases "MOD_INVERSE" mod_inv_in mod_inv_check
     --putStrLn $ show good
 

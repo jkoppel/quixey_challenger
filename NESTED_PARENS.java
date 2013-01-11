@@ -23,9 +23,4 @@ public class NESTED_PARENS {
             System.out.println(depth == 0 ? "1" : "0");
         }
     }
-
-    public static <T> List<T> list() { return new ArrayList<T>(); }
-    public static <K,V> Map<K,V> map() { return new HashMap<K,V>(); }
-    public static int i(String s) { return Integer.parseInt(s); }
-    public static long l(String s) { return Long.parseLong(s); }
 }
