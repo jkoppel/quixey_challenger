@@ -7,10 +7,13 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 
 import Language.Java.Syntax hiding (Assert)
+import Language.Java.Pretty (prettyPrint)
 
 import Sketch
 
-data ZType = ZInt | ZBool
+import Debug.Trace
+
+data ZType = ZInt | ZBool | ZArray ZType ZType
              deriving (Show, Eq)
 
 data Z3 = Assert Z3
@@ -19,6 +22,8 @@ data Z3 = Assert Z3
         | ZVar String
         | BV32 Int
         | ZBinOp String Z3 Z3
+        | ZSelect Z3 Z3
+        | ZStore Z3 Z3 Z3
         | CheckSat
         | GetModel
         deriving (Show, Eq)
@@ -38,6 +43,7 @@ class Pretty a where
 instance Pretty ZType where
   pretty ZInt = "(_ BitVec 32)"
   pretty ZBool = "Bool"
+  pretty (ZArray t1 t2) = "(Array " ++ (pretty t1) ++ " " ++ (pretty t2) ++ ")"
 
 instance Pretty Z3 where
   pretty (Assert z) = "\n(assert " ++ (pretty z) ++ ")"
@@ -48,6 +54,8 @@ instance Pretty Z3 where
                         "(_ bv" ++ (show n) ++ " 32)"
                       else
                         "(bvneg " ++ (pretty (BV32 (-n))) ++ ")"
+  pretty (ZSelect arr n) = "(select " ++ (pretty arr) ++ " " ++ (pretty n) ++ ")"                      
+  pretty (ZStore arr n e) = "(store " ++ (pretty arr) ++ " " ++ (pretty n) ++ (pretty e) ++ ")"
   pretty (ZBinOp s z1 z2) = "(" ++ s ++ " " ++ (pretty z1) ++ " " ++ (pretty z2) ++ ")"
   pretty (ZIte z1 z2 z3) = "(ite " ++ (pretty z1) ++ " " ++ (pretty z2) ++ " " ++ (pretty z3) ++ ")"
   pretty CheckSat = "(check-sat)"
@@ -58,7 +66,7 @@ startState skst = SymbState {counter = 0,
                              z3 = [],
                              pathGuard = ZVar "true",
                              retVar = "",
-                             varLab = Map.empty,
+                             varLab = Map.insert "A" 0 Map.empty,
                              sketchState = skst}
 
 type Symb = State SymbState
@@ -90,14 +98,15 @@ getVar var = do
               Nothing -> error ("Looking up undeclared variable: " ++ var)
               Just k -> return $ var ++ "_" ++ (show k)
 
-overwriteVar :: String -> Symb ()
-overwriteVar n = do m <- gets varLab
-                    let k' = case Map.lookup n m of
-                               Nothing -> 0
-                               Just k -> k+1
-                    modify (\s -> s {varLab = Map.insert n k' m})
-                    addZ3 $ DeclareConst (n ++ "_" ++ (show k')) ZInt
-                    return ()
+overwriteVar :: String -> ZType -> Symb ()
+overwriteVar n t = do 
+    m <- gets varLab
+    let k' = case Map.lookup n m of
+               Nothing -> 0
+               Just k -> k+1
+    modify (\s -> s {varLab = Map.insert n k' m})
+    addZ3 $ DeclareConst (n ++ "_" ++ (show k')) t
+    return ()
 
 zAssert :: Z3 -> Symb ()
 zAssert e = addZ3 $ Assert e
@@ -130,16 +139,47 @@ symbStmt (Return (Just e)) = do v <- symbExp e
                                 return ()
 
 symbVarDecl :: Type -> VarDecl -> Symb ()
-symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do addZ3 $ DeclareConst n (symbType t)
-                                                     case vinit of
-                                                         Nothing -> return ()
-                                                         Just (InitExp e) -> do v <- symbExp e
-                                                                                overwriteVar n
-                                                                                n' <- getVar n
-                                                                                zAssert $ ZBinOp "=" (ZVar n) (ZVar v)
-                                                                                return ()
+symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do 
+    overwriteVar n ZInt
+    n' <- getVar n
+    case vinit of
+         Nothing -> return ()
+         Just (InitExp e) -> do 
+            v <- symbExp e
+            zAssert $ ZBinOp "=" (ZVar n') (ZVar v)
 
 symbExp :: Exp -> Symb String
+{-symbExp (ArrayCreate _ [_] 0) = do
+    v <- tempVar $ ZArray ZInt ZInt
+    return v
+-}
+symbExp (ArrayAccess (ArrayIndex arr n)) = do
+    arr' <- symbExp arr
+    n' <- symbExp n
+    v <- tempVar ZInt
+    zAssert $ ZBinOp "=" (ZVar v) (ZSelect (ZVar arr') (ZVar n'))
+    return v
+{-
+
+ArrayCreate Type [Exp] Int
+ArrayAccess (ArrayIndex arr n)
+
+
+(declare-const a3 (Array Int Int))
+(assert (= (select a1 x) x))
+(assert (= (store a1 x y) a1))
+-}
+
+{-symbExp (Assign (ArrayLhs (ArrayIndex arr n)) EqualA e) = do
+    arr' <- symbExp arr
+    n' <- symbExp n
+    overwriteVar arr'
+    v <- getVar arr'
+    e' <- symbExp e
+    zAssert $ ZBinOp "=" (ZVar v) (ZStore (ZVar arr') (ZVar n') (ZVar e'))
+    return v
+-}    
+
 symbExp (Assign (NameLhs (Name [Ident v])) EqualA e) = symbAssign v e
 symbExp (Lit l) = do v <- tempVar ZInt
                      zAssert $ ZBinOp "=" (ZVar v) (symbLit l)
@@ -163,9 +203,10 @@ symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
                              zAssert $ ZBinOp "=" (ZVar v) (ZBinOp (opName o) (ZVar v1) (ZVar v2))
                              return v
 symbExp (ExpName (Name [Ident n])) = getVar n
+symbExp e = fail (prettyPrint e)
                              
 symbAssign :: String -> Exp -> Symb String
-symbAssign n e = do overwriteVar n
+symbAssign n e = do overwriteVar n ZInt
                     v <- getVar n
                     ev <- symbExp e
                     zAssert $ ZBinOp "=" (ZVar v) (ZVar ev)
@@ -181,6 +222,7 @@ opName Div = "bvsdiv"
 symbType :: Type -> ZType
 symbType (PrimType IntT) = ZInt
 symbType (PrimType BooleanT) = ZBool
+symbType (RefType (ArrayType t)) = ZArray ZInt (symbType t)
 
 symbLit :: Literal -> Z3
 symbLit (Int n) = BV32 $ fromInteger n
@@ -188,16 +230,27 @@ symbLit (Boolean True) = ZVar "true"
 symbLit (Boolean False) = ZVar "false"
 
 symbTest :: MemberDecl -> [Int] -> Int -> Symb ()
-symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do overwriteVar "retVar"
-                                                                              r <- getVar "retVar"
-                                                                              modify (\s -> s {retVar = r})
-                                                                              mapM_ (uncurry symbAssign) (zip argNames expInputs)
-                                                                              symbBlock b
-                                                                              zAssert $ ZBinOp "=" (ZVar r) (BV32 output)
-                                                                              return ()
+symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
+  overwriteVar "retVar" ZInt
+  r <- getVar "retVar"
+  zAssert $ ZBinOp "=" (ZVar r) (BV32 output)
+  overwriteVar "A" (ZArray ZInt ZInt)
+  arr <- getVar "A"
+  modify (\s -> s {retVar = r})
+  mapM_ (\(e,i) -> do
+    v <- symbExp e
+    zAssert $ ZBinOp "=" (ZVar v) (ZSelect (ZVar arr) (symbLit $ Int i))) (zip expInputs [1..])
+  symbBlock b  
+  where
+    expInputs = map (Lit . Int . toInteger) inputs
+    
+
+  {-mapM_ (uncurry symbAssign) (zip argNames expInputs)
+  symbBlock b
+  return ()
   where
     argNames = map (\(FormalParam _ _ _ (VarId (Ident n))) -> n) args
-    expInputs = map (Lit . Int . toInteger) inputs
+    -}
 
 declare :: String -> Symb ()
 declare n = do addZ3 $ DeclareConst n ZInt
