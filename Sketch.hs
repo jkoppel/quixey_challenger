@@ -17,6 +17,8 @@ import Kure
 import KureCong
 import Mutate hiding (not)
 
+hole_depth = 2
+
 data SketchState = SketchState {
                           sketchVars :: Set.Set String,
                           nVars :: Int
@@ -49,19 +51,29 @@ sketchOp o e1 e2 = do e1' <- e1
 
 
 alternatives :: [Sketch Exp] -> Sketch Exp
-alternatives es = do es' <- sequence es
-                     v <- newSketchVar
-                     return $ foldr (\c (e,i) -> Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int i)) e c)
+alternatives [x] = x
+alternatives (x:xs) = do
+    v <- newSketchVar
+    fst <- x
+    rest <- alternatives xs
+    return $ Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int 0)) fst rest
+
+{-
+alternatives es = do 
+    es' <- sequence es
+    v <- newSketchVar
+    return $ foldr (\c (e,i) -> Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int i)) e c)
                                 (head es')
                                 (zip [0..] (tail es'))
+-}
 
-sketchVar :: Map.Map String a -> Sketch Exp
-sketchVar m = alternatives (map (\v -> ExpName $ Name [Ident v]) (map fst $ Map.toList m))
+sketchVar :: Map.Map Ident a -> Sketch Exp
+sketchVar m = alternatives (map (\v -> return $ ExpName $ Name [v]) (map fst $ Map.toList m))
 
-boundedExp :: Map.Map String a -> Int -> Sketch Exp
+boundedExp :: Map.Map Ident a -> Int -> Sketch Exp
 boundedExp m 0 = alternatives [sketchConst, sketchVar m]
 boundedExp m n = alternatives [sketchConst,
-                               sketchVar,
+                               sketchVar m,
                                sketchOp Add e e,
                                sketchOp Sub e e,
                                sketchOp Mult e e,
@@ -80,8 +92,8 @@ findMethod n = onetdT $ promoteT (findMethod' n)
 getMethod :: String -> CompilationUnit -> MemberDecl
 getMethod interest prog = runKureM id (error "did not find method") (apply (findMethod interest) initialContext (inject prog))
 
-makeSketchExp :: MemberDecl -> Map.Map String a -> (SketchState, Exp)
-makeSketchExp d m = swap $ runState (boundedExp m 3) startSketchState
+makeSketchExp :: MemberDecl -> Map.Map Ident a -> (SketchState, Exp)
+makeSketchExp d m = swap $ runState (boundedExp m hole_depth) startSketchState
 
 replaceExp' :: Int -> Exp -> Rewrite Context (ReaderT TypeMap (StateT Int KureM)) Exp
 replaceExp' n f = translate $ \_ e -> do l <- lift nextLabel
@@ -112,7 +124,8 @@ genSketches src interest = case parser compilationUnit src of
                               Left _ -> error "Parse error"
                               Right tree -> let m = getMethod interest tree
                                                 tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject m))
-                                                (skst, sexp) = makeSketchExp m tm
+                                                tm' = Map.delete (Ident interest) tm
+                                                (skst, sexp) = makeSketchExp m tm'
                                                 nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject m))
                                                 sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]] in
                                               (skst, sketches)

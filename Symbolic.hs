@@ -81,15 +81,14 @@ isSketchVar n = do vs <- gets (sketchVars . sketchState)
                    return $ Set.member n vs
 
 getVar :: String -> Symb String
-getVar n = do m <- gets varLab
-              b <- isSketchVar n
-              if b
-                 then
-                   return n
-                 else
-                  case Map.lookup n m of
-                      Nothing -> error "Looking up undeclared variable"
-                      Just k -> return $ n ++ "_" ++ (show k)
+getVar var = do 
+    m <- gets varLab
+    b <- isSketchVar var
+    if b
+     then return var
+     else case Map.lookup var m of
+              Nothing -> error ("Looking up undeclared variable: " ++ var)
+              Just k -> return $ var ++ "_" ++ (show k)
 
 overwriteVar :: String -> Symb ()
 overwriteVar n = do m <- gets varLab
@@ -141,6 +140,7 @@ symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do addZ3 $ DeclareConst n (sym
                                                                                 return ()
 
 symbExp :: Exp -> Symb String
+symbExp (Assign (NameLhs (Name [Ident v])) EqualA e) = symbAssign v e
 symbExp (Lit l) = do v <- tempVar ZInt
                      zAssert $ ZBinOp "=" (ZVar v) (symbLit l)
                      return v
@@ -156,6 +156,7 @@ symbExp (BinOp e1 Equal e2) = do
     v2 <- symbExp e2
     v <- tempVar ZBool
     zAssert $ ZBinOp "=" (ZVar v) (ZBinOp "=" (ZVar v1) (ZVar v2))
+    return v
 symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
                              v2 <- symbExp e2
                              v <- tempVar ZInt
@@ -163,12 +164,12 @@ symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
                              return v
 symbExp (ExpName (Name [Ident n])) = getVar n
                              
-symbAssign :: String -> Exp -> Symb ()
+symbAssign :: String -> Exp -> Symb String
 symbAssign n e = do overwriteVar n
                     v <- getVar n
                     ev <- symbExp e
                     zAssert $ ZBinOp "=" (ZVar v) (ZVar ev)
-                    return ()
+                    return v
 
 opName :: Op -> String
 opName Mult = "bvmul"

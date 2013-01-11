@@ -41,7 +41,7 @@ test_ideas st (idea:ideas) = do
         
 test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
 test_idea st idea = do
-    tests <- mapM (\_ -> make_in) [1..10]
+    tests <- mapM (\_ -> make_in) [1..3]
     z3in <- return $ evalSketch idea st tests
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
@@ -53,7 +53,7 @@ test_idea st idea = do
 make_in :: IO ([Int], Int)
 make_in = do
     x <- randomRIO (1 :: Int, 1000) 
-    return $ ([x], x+1)
+    return $ ([x], x*(x+1) `div` 2)
         
 str_to_map :: [String] -> M.Map String Int
 str_to_map [] = M.empty
