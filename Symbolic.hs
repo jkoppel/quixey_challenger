@@ -34,7 +34,6 @@ data Z3 = Assert Z3
 
 data SymbState = SymbState { counter :: Int,
                              z3 :: [Z3],
-                             nArgs :: Int
                              pathGuard :: [Z3],
                              retVar :: String,
                              varLab :: Map.Map String Int,
@@ -73,7 +72,6 @@ startState skst = SymbState {counter = 0,
                              z3 = [],
                              pathGuard = [],
                              retVar = "",
-                             nArgs = 1,
                              varLab = Map.insert "A" 0 Map.empty,
                              sketchState = skst}
 
@@ -212,15 +210,16 @@ symbExp (ArrayAccess (ArrayIndex arr n)) = do
     arr' <- symbExp arr
     n' <- symbExp n
     v <- tempVar ZInt
-    upper_bound <- nArgs
-    zAssert $ ZBinOp "=" (ZVar v) (select arr' n')
+    upper_bound <- getVar "length"
+    zAssert $ ZBinOp "=" (ZVar v) (select arr' n' upper_bound)
     return v
 
-select :: String -> String -> Int -> Z3
-select arr n upper =
-    ZIte (ZAnd (> (ZVar n) 0) (<= (ZVar n) (symbLit upper)))
-         (ZSelect (ZVar arr') (ZVar n'))
-         (symbList 0)  
+    where
+    select :: String -> String -> String -> Z3
+    select arr n upper =
+        ZIte (ZBinOp "and" (ZBinOp "bvsge" (ZVar n) (symbLit $ Int 0)) (ZBinOp "bvslt" (ZVar n) (ZVar upper)))
+             (ZSelect (ZVar arr) (ZVar n))
+             (symbLit $ Int 0)
 {-
 
 ArrayCreate Type [Exp] Int
@@ -311,9 +310,13 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   overwriteVar "retVar" ZInt
   r <- getVar "retVar"
   zAssert $ ZBinOp "=" (ZVar r) (BV32 output)
+
   overwriteVar "A" (ZArray ZInt ZInt)
   arr <- getVar "A"
-  zAssert $ ZBinOp "=" (ZVar arr) (ConstArray 0)
+
+  overwriteVar "length" ZInt
+  len <- getVar "length"
+  zAssert $ ZBinOp "=" (ZVar len) (BV32 $ head $ inputs)
 
   modify (\s -> s {retVar = r})
   mapM_ (\(e,i) -> do
@@ -321,7 +324,7 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
     zAssert $ ZBinOp "=" (ZVar v) (ZSelect (ZVar arr) (symbLit $ Int i))) (zip expInputs [0..])
   symbBlock b  
   where
-    expInputs = map (Lit . Int . toInteger) inputs
+    expInputs = map (Lit . Int . toInteger) (tail inputs)
     
 
   {-mapM_ (uncurry symbAssign) (zip argNames expInputs)
@@ -351,8 +354,9 @@ evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (start
 
 
 
+{-
 myMeth = MethodDecl [] [] Nothing (Ident "foo") [FormalParam [] (PrimType IntT) False (VarId $ Ident "x")] [] $ MethodBody $ Just $ Block [BlockStmt $ IfThenElse (Lit $ Boolean False) (ExpStmt $ Assign (NameLhs (Name [Ident "x"])) EqualA (Lit $ Int 1)) Empty]--,BlockStmt $ Return $ Just $ BinOp (ExpName (Name [Ident "x"])) Mult (Lit (Int 3))]
 myTest = do symbTest myMeth [10] 20
             return ()
 runTest = runState myTest (startState startSketchState)
-
+-}

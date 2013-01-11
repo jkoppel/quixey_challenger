@@ -24,8 +24,11 @@ main = mainLoop "TRI.java"
 
 make_in :: IO ([Int], Int)
 make_in = do
-    x <- randomRIO (0 :: Int, 10) 
-    return $ ([x], x+1)
+    x1 <- randomRIO (0 :: Int, 10) 
+    x2 <- randomRIO (0 :: Int, 10) 
+    x3 <- randomRIO (0 :: Int, 10) 
+    x4 <- randomRIO (0 :: Int, 10) 
+    return $ ([4, x1, x2, x3, x4], x1*x4)
 
 mainLoop :: String -> IO ()
 mainLoop file = do
@@ -49,7 +52,7 @@ test_ideas st (idea:ideas) = do
         
 test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
 test_idea st idea = do
-    tests <- mapM (\_ -> make_in) [1..2]
+    tests <- mapM (\_ -> make_in) [1..4]
     z3in <- return $ evalSketch idea st tests
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""

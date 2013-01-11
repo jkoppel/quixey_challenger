@@ -72,7 +72,7 @@ sketchVar :: Map.Map Ident a -> Sketch Exp
 sketchVar m = alternatives (map (\v -> return $ ExpName $ Name [v]) (map fst $ Map.toList m))
 
 boundedExp :: Map.Map Ident a -> Int -> Sketch Exp
-boundedExp m 0 = alternatives [sketchConst, sketchVar m]
+boundedExp m 0 = alternatives [sketchConst, sketchVar m, sketchArg]
 boundedExp m n = alternatives [sketchConst,
                                sketchVar m,
                                sketchArg,
