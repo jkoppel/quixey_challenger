@@ -10,9 +10,11 @@ import Data.Maybe
 import Language.Java.Syntax hiding (Assert)
 import Language.Java.Pretty (prettyPrint)
 
+import Debug.Trace
+
 import Sketch
 
-import Debug.Trace
+maxUnrollDepth = 1
 
 data ZType = ZInt | ZBool | ZArray ZType ZType
              deriving (Show, Eq)
@@ -37,7 +39,8 @@ data SymbState = SymbState { counter :: Int,
                              pathGuard :: [Z3],
                              retVar :: String,
                              varLab :: Map.Map String Int,
-                             sketchState :: SketchState
+                             sketchState :: SketchState,
+                             unrollDepth :: Int
                              } deriving (Show)
 
 class Pretty a where
@@ -73,7 +76,8 @@ startState skst = SymbState {counter = 0,
                              pathGuard = [],
                              retVar = "",
                              varLab = Map.insert "A" 0 Map.empty,
-                             sketchState = skst}
+                             sketchState = skst,
+                             unrollDepth = 0}
 
 type Symb = State SymbState
 
@@ -189,7 +193,18 @@ symbStmt (IfThenElse e s1 s2) = do
                               mVar x m3
                             else
                               mVar x m1
-
+symbStmt (While e s) = do
+       d <- gets unrollDepth
+       if d >= maxUnrollDepth
+        then
+         do v <- symbExp e
+            zAssert $ ZNot (ZVar v)
+            return ()
+        else
+         do modify (\s -> s {unrollDepth=d+1})
+            symbStmt $ IfThenElse e (StmtBlock $ Block [BlockStmt s, BlockStmt $ While e s]) Empty
+            modify (\s -> s {unrollDepth=d})
+            return ()
 
 symbVarDecl :: Type -> VarDecl -> Symb ()
 symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do 
@@ -242,7 +257,7 @@ ArrayAccess (ArrayIndex arr n)
 -}    
 
 symbExp (Assign (NameLhs (Name [Ident v])) EqualA e) = symbAssign v e
-symbExp (Lit l) = do v <- tempVar ZInt
+symbExp (Lit l) = do v <- tempVar (litType l)
                      zAssert $ ZBinOp "=" (ZVar v) (symbLit l)
                      return v
 symbExp (Cond e1 e2 e3) = do
@@ -267,9 +282,9 @@ symbExp (ExpName (Name [Ident n])) = getVar n
 symbExp e = fail (prettyPrint e)
                              
 symbAssign :: String -> Exp -> Symb String
-symbAssign n e = do overwriteVar n ZInt
+symbAssign n e = do ev <- symbExp e
+                    overwriteVar n ZInt
                     v <- getVar n
-                    ev <- symbExp e
                     zAssert $ ZBinOp "=" (ZVar v) (ZVar ev)
                     return v
 
@@ -299,6 +314,10 @@ symbType :: Type -> ZType
 symbType (PrimType IntT) = ZInt
 symbType (PrimType BooleanT) = ZBool
 symbType (RefType (ArrayType t)) = ZArray ZInt (symbType t)
+
+litType :: Literal -> ZType
+litType (Int _) = ZInt
+litType (Boolean _) = ZBool
 
 symbLit :: Literal -> Z3
 symbLit (Int n) = BV32 $ fromInteger n
@@ -351,12 +370,3 @@ evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (start
                   addZ3 CheckSat
                   addZ3 GetModel
                   return ()
-
-
-
-{-
-myMeth = MethodDecl [] [] Nothing (Ident "foo") [FormalParam [] (PrimType IntT) False (VarId $ Ident "x")] [] $ MethodBody $ Just $ Block [BlockStmt $ IfThenElse (Lit $ Boolean False) (ExpStmt $ Assign (NameLhs (Name [Ident "x"])) EqualA (Lit $ Int 1)) Empty]--,BlockStmt $ Return $ Just $ BinOp (ExpName (Name [Ident "x"])) Mult (Lit (Int 3))]
-myTest = do symbTest myMeth [10] 20
-            return ()
-runTest = runState myTest (startState startSketchState)
--}

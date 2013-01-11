@@ -1,26 +1,21 @@
-import java.util.*;
-import java.io.*;
-import java.awt.Point;
-import static java.lang.Math.*;
-
 public class NESTED_PARENS {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
-        CAS: while(in.hasNext()) {
-            String parens = in.next();
-            int depth = 0;
-            for(int i=0; i < parens.length(); i++) {
-                if(parens.charAt(i) == '(') {
-                    depth++;
-                } else {
-                    depth--;
-                    if(depth < 0) {
-                        System.out.println("0");
-                        continue CAS;
-                    }
-                }
+        char[] S = in.next();
+        int[] SA = new int[
+        
+    }
+
+    public static int is_ok(int[] A) {
+        int depth = 0;
+        for(int i=0; i<A.length; i++) {
+            if(A[i] == '(') {
+                depth++;
+            } else {
+                depth--;
+                if(depth < 0) return 0;
             }
-            System.out.println(depth == 0 ? "1" : "0");
         }
+        return 1;
     }
 }
