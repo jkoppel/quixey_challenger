@@ -15,6 +15,7 @@ data ZType = ZInt | ZBool
 
 data Z3 = Assert Z3
         | DeclareConst String ZType
+        | ZIte Z3 Z3 Z3
         | ZVar String
         | BV32 Int
         | ZBinOp String Z3 Z3
@@ -48,6 +49,7 @@ instance Pretty Z3 where
                       else
                         "(bvneg " ++ (pretty (BV32 (-n))) ++ ")"
   pretty (ZBinOp s z1 z2) = "(" ++ s ++ " " ++ (pretty z1) ++ " " ++ (pretty z2) ++ ")"
+  pretty (ZIte z1 z2 z3) = "(ite " ++ (pretty z1) ++ " " ++ (pretty z2) ++ " " ++ (pretty z3) ++ ")"
   pretty CheckSat = "(check-sat)"
   pretty GetModel = "(get-model)"
 
@@ -142,6 +144,13 @@ symbExp :: Exp -> Symb String
 symbExp (Lit l) = do v <- tempVar ZInt
                      zAssert $ ZBinOp "=" (ZVar v) (symbLit l)
                      return v
+symbExp (Cond e1 e2 e3) = do
+    v1 <- symbExp e1
+    v2 <- symbExp e2
+    v3 <- symbExp e3
+    v <- tempVar ZInt
+    zAssert $ ZBinOp "=" (ZVar v) (ZIte (ZVar v1) (ZVar v2) (ZVar v3))
+    return v
 symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
                              v2 <- symbExp e2
                              v <- tempVar ZInt

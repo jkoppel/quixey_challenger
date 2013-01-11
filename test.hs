@@ -18,7 +18,7 @@ import Language.Java.Pretty
 import Symbolic
 import Sketch
 
-main = mainLoop "DOUBLE.java"
+main = mainLoop "TRI.java"
 
 mainLoop :: String -> IO ()
 mainLoop file = do
@@ -28,8 +28,8 @@ mainLoop file = do
     case best of
         Nothing -> putStrLn "failed"
         Just (code, model) -> do
-            final_code <- return $ constFold model code
-            putStrLn ((show model) ++ " " ++ (prettyPrint code))
+            final_code <- return $ (constantFold model code) :: IO MemberDecl
+            putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
 test_ideas :: SketchState -> [MemberDecl] -> IO (Maybe (MemberDecl, M.Map String Int))
 test_ideas st [] = return $ Nothing
@@ -45,23 +45,22 @@ test_idea st idea = do
     z3in <- return $ evalSketch idea st tests
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
-    putStrLn (out ++ " " ++ (show exit))
     (head:model) <- return $ lines out
-    trace err (if head == "unsat"
+    if head == "unsat"
     then return Nothing
-    else return $ Just (str_to_map $ tail model))
+    else return $ Just (str_to_map $ tail model)
 
 make_in :: IO ([Int], Int)
 make_in = do
     x <- randomRIO (1 :: Int, 1000) 
-    return $ ([x], 2*x)
+    return $ ([x], x+1)
         
 str_to_map :: [String] -> M.Map String Int
 str_to_map [] = M.empty
 str_to_map [x] = M.empty
 str_to_map (x:y:rest) = M.insert var val m
     where
-    var = trace y $ (words x) !! 1
+    var = (words x) !! 1
     val = if ylen == 1 then yval else -yval
     ylen = length $ words y
     yval = if ylen == 1 then to_int y else to_int $ (words y) !! 1
@@ -75,9 +74,6 @@ to_int s = ans
     drop_paren = init $ drop_sharp
     Right (ans, _) = hexadecimal $ pack $ drop_paren
         
-    
-constFold = undefined
-
 test_cases = 10000
 max_array_size = 6
 max_int = 1000*1000
