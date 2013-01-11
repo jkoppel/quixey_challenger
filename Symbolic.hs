@@ -160,6 +160,7 @@ symbStmt (Return (Just e)) = do v <- symbExp e
                                 r <- gets retVar
                                 zAssert $ ZBinOp "=>" g (ZBinOp "=" (ZVar r) (ZVar v))
                                 return ()
+symbStmt (IfThen e s) = symbStmt $ IfThenElse e s Empty
 symbStmt (IfThenElse e s1 s2) = do
     v1 <- symbExp e
     m1 <- gets varLab
