@@ -246,6 +246,8 @@ ArrayAccess (ArrayIndex arr n)
     return v
 -}    
 
+symbExp (PostIncrement (ExpName (Name [Ident v]))) = symbExp $ Assign (NameLhs (Name [Ident v])) AddA (Lit $ Int 1)
+symbExp (Assign (NameLhs (Name [Ident v])) AddA e) = symbExp $ Assign (NameLhs (Name [Ident v])) EqualA (BinOp e Add (ExpName (Name [Ident v])))
 symbExp (Assign (NameLhs (Name [Ident v])) EqualA e) = symbAssign v e
 symbExp (Lit l) = do v <- tempVar (litType l)
                      zAssert $ ZBinOp "=" (ZVar v) (symbLit l)
