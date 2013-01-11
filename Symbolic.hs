@@ -5,6 +5,7 @@ import Control.Monad.State
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Data.Maybe
 
 import Language.Java.Syntax hiding (Assert)
 
@@ -19,6 +20,7 @@ data Z3 = Assert Z3
         | ZVar String
         | BV32 Int
         | ZBinOp String Z3 Z3
+        | ZNot Z3
         | CheckSat
         | GetModel
         deriving (Show, Eq)
@@ -26,7 +28,7 @@ data Z3 = Assert Z3
 
 data SymbState = SymbState { counter :: Int,
                              z3 :: [Z3],
-                             pathGuard :: Z3,
+                             pathGuard :: [Z3],
                              retVar :: String,
                              varLab :: Map.Map String Int,
                              sketchState :: SketchState
@@ -49,6 +51,7 @@ instance Pretty Z3 where
                       else
                         "(bvneg " ++ (pretty (BV32 (-n))) ++ ")"
   pretty (ZBinOp s z1 z2) = "(" ++ s ++ " " ++ (pretty z1) ++ " " ++ (pretty z2) ++ ")"
+  pretty (ZNot z) = "(not " ++ (pretty z) ++ ")"
   pretty (ZIte z1 z2 z3) = "(ite " ++ (pretty z1) ++ " " ++ (pretty z2) ++ " " ++ (pretty z3) ++ ")"
   pretty CheckSat = "(check-sat)"
   pretty GetModel = "(get-model)"
@@ -56,13 +59,27 @@ instance Pretty Z3 where
 startState :: SketchState -> SymbState
 startState skst = SymbState {counter = 0,
                              z3 = [],
-                             pathGuard = ZVar "true",
+                             pathGuard = [],
                              retVar = "",
                              varLab = Map.empty,
                              sketchState = skst}
 
 type Symb = State SymbState
 
+pushGuard :: Z3 -> Symb ()
+pushGuard z = do g <- gets pathGuard
+                 modify (\s -> s {pathGuard = z : g})
+                 return ()
+
+popGuard :: Symb ()
+popGuard = do g <- gets pathGuard
+              modify (\s -> s {pathGuard = tail g})
+              return ()
+
+getGuard :: Symb Z3
+getGuard = do g <- gets pathGuard
+              return $ foldr (ZBinOp "and") (ZVar "true") g
+     
 addZ3 :: Z3 -> Symb ()
 addZ3 e = do z <- gets z3
              let z' = z ++ [e]
@@ -80,6 +97,8 @@ isSketchVar :: String -> Symb Bool
 isSketchVar n = do vs <- gets (sketchVars . sketchState)
                    return $ Set.member n vs
 
+vName v k = v ++ "_" ++ (show k)
+
 getVar :: String -> Symb String
 getVar var = do 
     m <- gets varLab
@@ -88,7 +107,7 @@ getVar var = do
      then return var
      else case Map.lookup var m of
               Nothing -> error ("Looking up undeclared variable: " ++ var)
-              Just k -> return $ var ++ "_" ++ (show k)
+              Just k -> return $ vName var k
 
 overwriteVar :: String -> Symb ()
 overwriteVar n = do m <- gets varLab
@@ -96,7 +115,7 @@ overwriteVar n = do m <- gets varLab
                                Nothing -> 0
                                Just k -> k+1
                     modify (\s -> s {varLab = Map.insert n k' m})
-                    addZ3 $ DeclareConst (n ++ "_" ++ (show k')) ZInt
+                    addZ3 $ DeclareConst (vName n k') ZInt
                     return ()
 
 zAssert :: Z3 -> Symb ()
@@ -124,10 +143,41 @@ symbStmt Empty = return ()
 symbStmt (ExpStmt e) = do symbExp e
                           return ()
 symbStmt (Return (Just e)) = do v <- symbExp e
-                                g <- gets pathGuard
+                                g <- getGuard
                                 r <- gets retVar
                                 zAssert $ ZBinOp "=>" g (ZBinOp "=" (ZVar r) (ZVar v))
                                 return ()
+symbStmt (IfThenElse e s1 s2) = do
+    v1 <- symbExp e
+    m1 <- gets varLab
+    pushGuard (ZVar v1)
+    v2 <- symbStmt s1
+    popGuard
+    m2 <- gets varLab
+    pushGuard $ ZNot (ZVar v1)
+    v3 <- symbStmt s2
+    popGuard
+    m3 <- gets varLab
+    g <- getGuard
+    let g1 = ZBinOp "and" g (ZVar v1)
+    let g2 = ZBinOp "and" g (ZNot (ZVar v1))
+    mapM (overwriteVar . fst) (Map.toList m1)
+    m4 <- gets varLab
+    mapM (\(x,n) -> zAssert $ ZBinOp "=>" g1 (ZBinOp "=" (mVar x m4) (mVar x m2)))
+         (Map.toList m1)
+    mapM (\(x,n) -> zAssert $ ZBinOp "=>" g2 (ZBinOp "=" (mVar x m4) (branch2Var x m1 m2 m3)))
+         (Map.toList m1)
+    return ()
+  where
+   lookup x m = fromJust $ Map.lookup x m
+
+   mVar x m = ZVar $ vName x (lookup x m)
+   branch2Var x m1 m2 m3 = if lookup x m3 > lookup x m2
+                            then
+                              mVar x m3
+                            else
+                              mVar x m1
+
 
 symbVarDecl :: Type -> VarDecl -> Symb ()
 symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do addZ3 $ DeclareConst n (symbType t)
@@ -218,10 +268,9 @@ evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (start
                   return ()
 
 
-{-
-myMeth = MethodDecl [] [] Nothing (Ident "foo") [FormalParam [] (PrimType IntT) False (VarId $ Ident "x")] [] $ MethodBody $ Just $ Block [BlockStmt $ Return $ Just $ BinOp (ExpName (Name [Ident "x"])) Mult (Lit (Int 3))]
-myTest = do symbTest myMeth [1] 2
-            symbTest myMeth [2] 4
+
+myMeth = MethodDecl [] [] Nothing (Ident "foo") [FormalParam [] (PrimType IntT) False (VarId $ Ident "x")] [] $ MethodBody $ Just $ Block [BlockStmt $ IfThenElse (Lit $ Boolean False) (ExpStmt $ Assign (NameLhs (Name [Ident "x"])) EqualA (Lit $ Int 1)) Empty]--,BlockStmt $ Return $ Just $ BinOp (ExpName (Name [Ident "x"])) Mult (Lit (Int 3))]
+myTest = do symbTest myMeth [10] 20
             return ()
-runTest = runState myTest startState
--}
+runTest = runState myTest (startState startSketchState)
+
