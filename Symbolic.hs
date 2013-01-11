@@ -178,7 +178,7 @@ symbStmt (IfThenElse e s1 s2) = do
     g <- getGuard
     let g1 = ZBinOp "and" g (ZVar v1)
     let g2 = ZBinOp "and" g (ZNot (ZVar v1))
-    mapM ((flip overwriteVar) ZInt . fst) (Map.toList m1)
+    mapM ((flip overwriteVar) ZInt . fst) (filter ((/='A') . head . fst) (Map.toList m1))
     m4 <- gets varLab
     mapM (\(x,n) -> zAssert $ ZBinOp "=>" g1 (ZBinOp "=" (mVar x m4) (mVar x m2)))
          (Map.toList m1)
