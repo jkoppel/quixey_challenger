@@ -31,3 +31,55 @@ Set of "interesting" variables
 
 constFold :: Map.Map String Int -> MemberDecl -> MemberDecl
 Constant folding
+
+----------------------
+
+
+
+I am having trouble sleeping, and can't code since some code hasn't been pushed, but I'm going to try to aid productivity here.
+
+How to handle ifs:
+
+Suppose x is assigned in a branch. Then you will need to create x', and assert (=> branch-taken (= x' x)). (Probably easier to write with ite.)
+
+SymbState keeps a map tracking the number of times each variable was assigned. You can use
+
+So, something like:
+
+symbStmt e s1 s2 =
+ do v1 <- symbExp e
+    m1 <- gets varLab
+    pushGuard (ZVar v1) -- pushGuard needs be written
+    v2 <- symbStmt s1
+    popGuard --ditto
+    m2 <- gets varLab
+    pushGuard $ ZNot (ZVar v1) --ZNot needs be added
+    v3 <- symbStmt s2
+    popGuard
+    m3 <- gets varLab
+    {- iterate over every variable x in m1; compare
+       the values in the m2 and m3 to determine if x was set in either branch.
+         call merge v1 x b1 b2. merge will do an (assert (= x' (ite g ...))),
+       where g is all the guards anded-together, along with v1,
+       to force new x to take the right value -}
+
+Documentation note: 
+
+overwriteVar x marks that you are about to create a "new" version of x -- ie, it increments the typeMap
+getVar x gets the current SSA version of x
+
+How to handle whiles:
+
+Add a field to SymbState to track the current unrolling depth
+
+Treat w@(While e s)  like (If e (Block [BlockStmt s, w]) Empty). Adjust depth field when recursing inside. If no more left to unroll, then do (assert (not guard))
+
+How to handle arrays:
+
+Z3 array syntax
+
+(declare-const a3 (Array Int Int))
+(assert (= (select a1 x) x))
+(assert (= (store a1 x y) a1))
+
+Should actually be quite straightforward, but make sure to only generate well-typed things when sketching.
