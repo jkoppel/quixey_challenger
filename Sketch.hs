@@ -124,7 +124,7 @@ doReplaceExp d i e = let tm = runKureM id (error "type map failed") (apply getTy
 
 genSketches :: String -> String -> (SketchState, [MemberDecl])
 genSketches src interest = case parser compilationUnit src of
-                              Left _ -> error "Parse error"
+                              Left err -> error $ "Parse error" ++ (show err)
                               Right tree -> let m = getMethod interest tree
                                                 tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject m))
                                                 tm' = Map.delete (Ident "A") $ Map.delete (Ident interest) tm

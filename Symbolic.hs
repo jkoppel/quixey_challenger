@@ -205,6 +205,7 @@ symbStmt (While e s) = do
             symbStmt $ IfThenElse e (StmtBlock $ Block [BlockStmt s, BlockStmt $ While e s]) Empty
             modify (\s -> s {unrollDepth=d})
             return ()
+symbStmt s = fail (prettyPrint s)            
 
 symbVarDecl :: Type -> VarDecl -> Symb ()
 symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do 
@@ -279,7 +280,8 @@ symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
                              zAssert $ ZBinOp "=" (ZVar v) (ZBinOp (opName o) (ZVar v1) (ZVar v2))
                              return v
 symbExp (ExpName (Name [Ident n])) = getVar n
-symbExp e = fail (prettyPrint e)
+symbExp (ExpName (Name xs)) = getVar "length"
+symbExp e = fail ("BAD: " ++ show e)
                              
 symbAssign :: String -> Exp -> Symb String
 symbAssign n e = do ev <- symbExp e

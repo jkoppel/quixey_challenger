@@ -20,20 +20,30 @@ import Language.Java.Pretty
 import Symbolic
 import Sketch
 
-main = mainLoop "TRI.java"
+main = mainLoop "NESTED_PARENS.java"
 
-make_in :: IO ([Int], Int)
 make_in = do
-    x1 <- randomRIO (0 :: Int, 10) 
-    x2 <- randomRIO (0 :: Int, 10) 
-    x3 <- randomRIO (0 :: Int, 10) 
-    x4 <- randomRIO (0 :: Int, 10) 
-    return $ ([4, x1, x2, x3, x4], x1*x4)
+    n <- randomRIO (1 :: Int, 10)
+    xs <- binary n
+    return $ (n:xs, is_nested xs 0)
+
+binary :: Int -> IO [Int]
+binary 0 = return $ []
+binary n = do
+    b <- randomIO
+    bs <- binary (n-1)
+    return $ (if b then 1 else -1):bs
+
+is_nested [] 0 = 1    
+is_nested [] _ = 0
+is_nested (1:xs) n = is_nested xs (n+1)
+is_nested (-1:_) 0 = 0
+is_nested (-1:xs) n = is_nested xs (n-1)
 
 mainLoop :: String -> IO ()
 mainLoop file = do
     program <- readFile file
-    (state, ideas) <- return $ genSketches program "main"
+    (state, ideas) <- return $ genSketches program "is_ok"
     best <- test_ideas state ideas
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
@@ -54,6 +64,7 @@ test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
 test_idea st idea = do
     tests <- mapM (\_ -> make_in) [1..4]
     z3in <- return $ evalSketch idea st tests
+    putStrLn (show tests)
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     (head:model) <- return $ lines out
