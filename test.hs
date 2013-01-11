@@ -13,6 +13,8 @@ import Data.Text (pack, unpack,  strip)
 import Data.Text.Read (hexadecimal)
 import qualified Data.Map as M
 
+import Data.List
+
 import Language.Java.Syntax
 import Language.Java.Pretty
 import Symbolic
@@ -20,14 +22,20 @@ import Sketch
 
 main = mainLoop "TRI.java"
 
+make_in :: IO ([Int], Int)
+make_in = do
+    x <- randomRIO (0 :: Int, 10) 
+    return $ ([x], x+1)
+
 mainLoop :: String -> IO ()
 mainLoop file = do
     program <- readFile file
     (state, ideas) <- return $ genSketches program "main"
     best <- test_ideas state ideas
     case best of
-        Nothing -> putStrLn "failed"
+        Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
+            putStrLn $ show model
             final_code <- return $ (constantFold model code) :: IO MemberDecl
             putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
@@ -41,7 +49,7 @@ test_ideas st (idea:ideas) = do
         
 test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
 test_idea st idea = do
-    tests <- mapM (\_ -> make_in) [1..3]
+    tests <- mapM (\_ -> make_in) [1..2]
     z3in <- return $ evalSketch idea st tests
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
@@ -50,21 +58,22 @@ test_idea st idea = do
     then return Nothing
     else return $ Just (str_to_map $ tail model)
 
-make_in :: IO ([Int], Int)
-make_in = do
-    x <- randomRIO (1 :: Int, 1000) 
-    return $ ([x], x*(x+1))
-        
 str_to_map :: [String] -> M.Map String Int
 str_to_map [] = M.empty
 str_to_map [x] = M.empty
-str_to_map (x:y:rest) = M.insert var val m
+str_to_map (x:y:rest) = 
+    if (length xs > 1 && isPrefixOf "sketch" (xs !! 1))
+    then 
+    let
+        val = if ylen == 1 then yval else -yval
+        ylen = length $ words y
+        yval = if ylen == 1 then to_int y else to_int $ (words y) !! 1
+        m = str_to_map rest
+    in M.insert (xs !! 1) val m
+    else str_to_map (y:rest)
     where
-    var = (words x) !! 1
-    val = if ylen == 1 then yval else -yval
-    ylen = length $ words y
-    yval = if ylen == 1 then to_int y else to_int $ (words y) !! 1
-    m = str_to_map rest
+    xs = words x
+
 
 to_int :: String -> Int
 to_int s = ans

@@ -48,24 +48,25 @@ sketchOp o e1 e2 = do e1' <- e1
                       e2' <- e2
                       return $ BinOp e1' o e2'
 
+sketchCond :: Sketch Exp -> Sketch Exp -> Sketch Exp
+sketchCond e1 e2 = do
+    e1' <- e1
+    e2' <- e2
+    return $ Cond (BinOp e1' Equal e2') (Lit $ Int $ 1) (Lit $ Int $ 0)
 
+sketchArg :: Sketch Exp
+sketchArg = do
+    c <- sketchConst
+    return $ ArrayAccess $ ArrayIndex (ExpName $ Name [Ident "A"]) c
 
 alternatives :: [Sketch Exp] -> Sketch Exp
+alternatives [] = return $ Lit $ Int $ 0
 alternatives [x] = x
 alternatives (x:xs) = do
     v <- newSketchVar
     fst <- x
     rest <- alternatives xs
     return $ Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int 0)) fst rest
-
-{-
-alternatives es = do 
-    es' <- sequence es
-    v <- newSketchVar
-    return $ foldr (\c (e,i) -> Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int i)) e c)
-                                (head es')
-                                (zip [0..] (tail es'))
--}
 
 sketchVar :: Map.Map Ident a -> Sketch Exp
 sketchVar m = alternatives (map (\v -> return $ ExpName $ Name [v]) (map fst $ Map.toList m))
@@ -74,10 +75,12 @@ boundedExp :: Map.Map Ident a -> Int -> Sketch Exp
 boundedExp m 0 = alternatives [sketchConst, sketchVar m]
 boundedExp m n = alternatives [sketchConst,
                                sketchVar m,
+                               sketchArg,
                                sketchOp Add e e,
                                sketchOp Sub e e,
                                sketchOp Mult e e,
-                               sketchOp Div e e]
+                               sketchOp Div e e,
+                               sketchCond e e]
               where
                 e = boundedExp m (n-1)
 
@@ -124,7 +127,7 @@ genSketches src interest = case parser compilationUnit src of
                               Left _ -> error "Parse error"
                               Right tree -> let m = getMethod interest tree
                                                 tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject m))
-                                                tm' = Map.delete (Ident interest) tm
+                                                tm' = Map.delete (Ident "A") $ Map.delete (Ident interest) tm
                                                 (skst, sexp) = makeSketchExp m tm'
                                                 nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject m))
                                                 sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]] in
