@@ -238,7 +238,8 @@ mutateExp n = anybuR $ promoteR $ mutateExp' n
 mutateProgram :: RandomGen g => g -> String -> (String, g)
 mutateProgram g str = case parser compilationUnit str of
                        Left err -> error ("Parse error: " ++ (show err))
-                       Right tree -> let tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject tree))
+                       Right tree -> let tm' = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject tree))
+                                         tm = Map.insert (Ident "length") (Base $ PrimType IntT) tm'
                                          nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject tree))
                                          (i, g') = randomR (0,nExp-1) g
                                          t = runReaderT (apply (mutateExp i) initialContext (inject tree)) tm
