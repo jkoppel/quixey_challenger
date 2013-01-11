@@ -248,3 +248,18 @@ mutateProgram g str = case parser compilationUnit str of
                                          (t''', g'') = runKureM (\(GCompilationUnit c,h) -> (c,h)) (error "thing failed") t''  in
                                      (show $ pretty t''' , g'')
                                 
+
+
+constantFold' :: Map.Map String Int -> Rewrite Context KureM Exp
+constantFold' m = translate $ \_ e -> case e of
+                                         (ExpName (Name [Ident v])) ->
+                                                      case Map.lookup v m of
+                                                           Just n -> return $ Lit $ Int (fromIntegral n)
+                                                           Nothing -> return e
+                                         _ -> return e
+
+constantFold'' :: Map.Map String Int -> Rewrite Context KureM GenericJava
+constantFold'' m = anybuR $ promoteR (constantFold' m)
+
+constantFold :: Map.Map String Int -> MemberDecl -> MemberDecl
+constantFold m d = runKureM (\(GMemberDecl x) -> x) (error "constant folding failed") (apply (constantFold'' m) initialContext (inject d))
