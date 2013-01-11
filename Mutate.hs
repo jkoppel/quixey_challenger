@@ -251,12 +251,28 @@ mutateProgram g str = case parser compilationUnit str of
 
 
 constantFold' :: Map.Map String Int -> Rewrite Context KureM Exp
-constantFold' m = translate $ \_ e -> case e of
-                                         (ExpName (Name [Ident v])) ->
-                                                      case Map.lookup v m of
-                                                           Just n -> return $ Lit $ Int (fromIntegral n)
-                                                           Nothing -> return e
-                                         _ -> return e
+constantFold' m = translate $ \_ e -> return $ fold_it e m
+
+fold_it :: Exp -> Map.Map String Int -> Exp
+fold_it e m = case e of 
+        ExpName (Name [Ident v]) ->
+                  case Map.lookup v m of
+                       Just n -> Lit $ Int (fromIntegral n)
+                       Nothing -> e
+        BinOp e1 Equal e2 -> case (e1', e2') of
+            (Lit (Boolean b1), Lit (Boolean b2)) -> Lit $ Boolean $ b1==b2
+            (Lit (Int n1), Lit (Int n2)) -> Lit $ Boolean $ n1==n2
+            _ -> BinOp e1' Equal e2'
+            where
+            e1' = fold_it e1 m
+            e2' = fold_it e2 m
+        Cond e1 e2 e3 -> case e1' of
+            Lit (Boolean True) -> e2'
+            Lit (Boolean False) -> e3'
+            _ -> Cond e1' e2' e3'
+            where
+            [e1', e2', e3'] = map (\x -> fold_it x m) [e1, e2, e3]
+        _ -> e
 
 constantFold'' :: Map.Map String Int -> Rewrite Context KureM GenericJava
 constantFold'' m = anybuR $ promoteR (constantFold' m)

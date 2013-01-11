@@ -17,7 +17,7 @@ import Kure
 import KureCong
 import Mutate hiding (not)
 
-hole_depth = 2
+hole_depth = 1
 
 data SketchState = SketchState {
                           sketchVars :: Set.Set String,

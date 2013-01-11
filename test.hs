@@ -53,7 +53,7 @@ test_idea st idea = do
 make_in :: IO ([Int], Int)
 make_in = do
     x <- randomRIO (1 :: Int, 1000) 
-    return $ ([x], x*(x+1) `div` 2)
+    return $ ([x], x*(x+1))
         
 str_to_map :: [String] -> M.Map String Int
 str_to_map [] = M.empty
