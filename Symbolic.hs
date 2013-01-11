@@ -163,6 +163,7 @@ symbStmt (Return (Just e)) = do v <- symbExp e
                                 r <- gets retVar
                                 zAssert $ ZBinOp "=>" g (ZBinOp "=" (ZVar r) (ZVar v))
                                 return ()
+symbStmt (IfThen e s) = symbStmt $ IfThenElse e s Empty
 symbStmt (IfThenElse e s1 s2) = do
     v1 <- symbExp e
     m1 <- gets varLab
@@ -257,6 +258,8 @@ ArrayAccess (ArrayIndex arr n)
     return v
 -}    
 
+symbExp (PostIncrement (ExpName (Name [Ident v]))) = symbExp $ Assign (NameLhs (Name [Ident v])) AddA (Lit $ Int 1)
+symbExp (Assign (NameLhs (Name [Ident v])) AddA e) = symbExp $ Assign (NameLhs (Name [Ident v])) EqualA (BinOp e Add (ExpName (Name [Ident v])))
 symbExp (Assign (NameLhs (Name [Ident v])) EqualA e) = symbAssign v e
 symbExp (Lit l) = do v <- tempVar (litType l)
                      zAssert $ ZBinOp "=" (ZVar v) (symbLit l)
