@@ -14,6 +14,12 @@ MOD_INVERSE is wrong, consider BASE = 1. All we require is BASE > 0, MOD > 0, (B
 
 In Mutate:
 
+mainLoop :: String -> IO ()
+Reads in program. Calls genSketches on it (how to get method name?)
+evals each sketch, seeing which one works ("works" == "z3 says it is SAT")
+Reads in Z3's model, and makes a map of variables to values
+Passes this to constFold, and then outputs the resulting program
+
 genSketches :: String -> String -> (SketchState, [MemberDecl])
 Takes a program and the name of the method we care about. Gives list of methods; each with an expression replaced with a sketched expression. SketchState is a type to be defined
 
