@@ -122,7 +122,7 @@ doReplaceExp d i e = let tm = runKureM id (error "type map failed") (apply getTy
                          t' = evalStateT t 0 in
                      runKureM (\(GMemberDecl c) -> c) (error "memberdecl proj failed") t'
 
-genSketches :: String -> String -> (SketchState, [MemberDecl])
+genSketches :: String -> String -> (SketchState, [MemberDecl], [MemberDecl])
 genSketches src interest = case parser compilationUnit src of
                               Left err -> error $ "Parse error" ++ (show err)
                               Right tree -> let m = getMethod interest tree
@@ -130,5 +130,6 @@ genSketches src interest = case parser compilationUnit src of
                                                 tm' = Map.delete (Ident "A") $ Map.delete (Ident interest) tm
                                                 (skst, sexp) = makeSketchExp m tm'
                                                 nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject m))
-                                                sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]] in
-                                              (skst, sketches)
+                                                sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]]
+                                                questions = [doReplaceExp m i (ExpName $ Name [Ident "????"]) | i <- [0..(nExp-1)]] in
+                                              (skst, sketches, questions)

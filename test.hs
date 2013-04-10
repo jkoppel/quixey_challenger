@@ -54,33 +54,33 @@ is_nested (-1:xs) n = is_nested xs (n-1)
 mainLoop :: String -> IO ()
 mainLoop file = do
     program <- readFile file
-    (state, ideas) <- return $ genSketches program "is_properly_nested"
-    best <- test_ideas state ideas
+    (state, ideas, qs) <- return $ genSketches program "is_properly_nested"
+    best <- test_ideas state (reverse ideas) (reverse qs)
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
             final_code <- return $ (constantFold model code) :: IO MemberDecl
             putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
-test_ideas :: SketchState -> [MemberDecl] -> IO (Maybe (MemberDecl, M.Map String Int))
-test_ideas st [] = return $ Nothing
-test_ideas st (idea:ideas) = do
-    result <- test_idea st idea
+test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> IO (Maybe (MemberDecl, M.Map String Int))
+test_ideas st [] _ = return $ Nothing
+test_ideas st (idea:ideas) (q:qs) = do
+    result <- test_idea st idea q
     case result of
-        Nothing -> test_ideas st (reverse ideas)
+        Nothing -> test_ideas st ideas qs
         Just model -> return $ Just (idea, model) 
         
-test_idea :: SketchState -> MemberDecl -> IO (Maybe (M.Map String Int))
-test_idea st idea = do
-    putStrLn $ prettyPrint idea
+test_idea :: SketchState -> MemberDecl -> MemberDecl -> IO (Maybe (M.Map String Int))
+test_idea st idea q = do
+    putStrLn $ prettyPrint q
     tests <- return $ paren_test --mapM (\_ -> make_in) [1..10]
     z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests))
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     (head:model) <- return $ lines out
     if head == "unsat"
-    then return Nothing
-    else return $ Just (str_to_map $ tail model)
+     then return Nothing
+     else return $ Just (str_to_map $ tail model)
 
 str_to_map :: [String] -> M.Map String Int
 str_to_map [] = M.empty
@@ -106,7 +106,7 @@ to_int s = ans
     drop_sharp = drop 2 trimmed
     drop_paren = init $ drop_sharp
     Right (ans, _) = hexadecimal $ pack $ drop_paren
-        
+{-        
 test_cases = 10000
 max_array_size = 6
 max_int = 1000*1000
@@ -329,3 +329,4 @@ next_pal_check input output = correct == ans
         strn = show n
 
     next_pal n = if (is_pal n) then n else next_pal (n+1)
+-}
