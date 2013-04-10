@@ -20,7 +20,7 @@ public class NESTED_PARENS {
             if(depth < 0) { bad = 1; }
             i+=1;
         }
-        if(bad==1) return 0;
-        else return 1;
+        if(bad==0) return 1;
+        else return 0;
     }
 }
