@@ -105,7 +105,6 @@ replaceExp' n f = translate $ \_ e -> do l <- lift nextLabel
                                            return e
                                           else
                                            do tm <- ask
-                                              let goodMutations = filter (\m -> applicable m e tm) allMutations
                                               if not (is_int e tm)
                                                then
                                                  return e
