@@ -2,6 +2,7 @@ import System.Process
 import System.IO
 import System.Random
 import System.Exit
+import System.Environment ( getArgs )
 import Control.Monad
 import Debug.Trace
 import Data.Int
@@ -20,8 +21,18 @@ import Language.Java.Pretty
 import Symbolic
 import Sketch
 
-main = mainLoop "NESTED_PARENS.java"
+import Tarski.Config ( readConfig, filePath, testCases )
 
+main :: IO ()
+main = do args <- getArgs
+          cfg <- case args of
+                      [s] -> readConfig s
+                      _   -> error "QC requires a single argument denoting a configuration file"
+          filepath <- return $ filePath cfg
+          testcases <- return $ testCases cfg
+          mainLoop filepath testcases
+
+{-
 paren_test = [
               ([0], 1),
               ([1,1],0),
@@ -31,6 +42,9 @@ paren_test = [
               ([2,-1,1],0),
               ([2,-1,-1],0)
              ]
+             -}
+
+type Tests = [([Int],Int)]
 
 make_in = do
     n <- randomRIO (0 :: Int, 2)
@@ -45,35 +59,35 @@ binary n = do
     bs <- binary (n-1)
     return $ (if b then 1 else -1):bs
 
-is_nested [] 0 = 1    
+is_nested [] 0 = 1
 is_nested [] _ = 0
 is_nested (1:xs) n = is_nested xs (n+1)
 is_nested (-1:_) 0 = 0
 is_nested (-1:xs) n = is_nested xs (n-1)
 
-mainLoop :: String -> IO ()
-mainLoop file = do
+mainLoop :: String -> String -> IO ()
+mainLoop file tests = do
     program <- readFile file
     (state, ideas, qs) <- return $ genSketches program "is_properly_nested"
-    best <- test_ideas state (reverse ideas) (reverse qs)
+    best <- test_ideas state (reverse ideas) (reverse qs) (read tests :: Tests)
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
             final_code <- return $ (constantFold model code) :: IO MemberDecl
             putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
-test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> IO (Maybe (MemberDecl, M.Map String Int))
-test_ideas st [] _ = return $ Nothing
-test_ideas st (idea:ideas) (q:qs) = do
-    result <- test_idea st idea q
+test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> Tests -> IO (Maybe (MemberDecl, M.Map String Int))
+test_ideas st [] _ _ = return $ Nothing
+test_ideas st (idea:ideas) (q:qs) tests = do
+    result <- test_idea st idea q tests
     case result of
-        Nothing -> test_ideas st ideas qs
-        Just model -> return $ Just (idea, model) 
-        
-test_idea :: SketchState -> MemberDecl -> MemberDecl -> IO (Maybe (M.Map String Int))
-test_idea st idea q = do
+        Nothing -> test_ideas st ideas qs tests
+        Just model -> return $ Just (idea, model)
+
+test_idea :: SketchState -> MemberDecl -> MemberDecl -> Tests -> IO (Maybe (M.Map String Int))
+test_idea st idea q tests = do
     putStrLn $ prettyPrint q
-    tests <- return $ paren_test --mapM (\_ -> make_in) [1..10]
+    {-tests <- return $ paren_test-} --mapM (\_ -> make_in) [1..10]
     z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests))
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
@@ -85,9 +99,9 @@ test_idea st idea q = do
 str_to_map :: [String] -> M.Map String Int
 str_to_map [] = M.empty
 str_to_map [x] = M.empty
-str_to_map (x:y:rest) = 
+str_to_map (x:y:rest) =
     if (length xs > 1 && isPrefixOf "sketch" (xs !! 1))
-    then 
+    then
     let
         val = if ylen == 1 then yval else -yval
         ylen = length $ words y
