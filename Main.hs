@@ -32,24 +32,6 @@ main = do args <- getArgs
                       _   -> error "QC requires a single argument denoting a configuration file"
           mainLoop cfg
 
-{-
-paren_test = [
-              ([0], 1),
-              ([1,1],0),
-              ([1,-1],0),
-              ([2,1,1],0),
-              ([2,1,-1],1),
-              ([2,-1,1],0),
-              ([2,-1,-1],0)
-             ]
-             -}
-
-
-make_in = do
-    n <- randomRIO (0 :: Int, 2)
-    xs <- binary n
-    fst <- return $ head xs
-    return $ (n:xs, is_nested xs 0)
 
 binary :: Int -> IO [Int]
 binary 0 = return $ []
@@ -57,12 +39,6 @@ binary n = do
     b <- randomIO
     bs <- binary (n-1)
     return $ (if b then 1 else -1):bs
-
-is_nested [] 0 = 1
-is_nested [] _ = 0
-is_nested (1:xs) n = is_nested xs (n+1)
-is_nested (-1:_) 0 = 0
-is_nested (-1:xs) n = is_nested xs (n-1)
 
 mainLoop :: Config -> IO ()
 mainLoop cfg = do
@@ -89,7 +65,6 @@ test_ideas st (idea:ideas) (q:qs) tests = do
 test_idea :: SketchState -> MemberDecl -> MemberDecl -> Tests -> IO (Maybe (M.Map String Int))
 test_idea st idea q tests = do
     putStrLn $ prettyPrint q
-    {-tests <- return $ paren_test-} --mapM (\_ -> make_in) [1..10]
     z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests))
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
