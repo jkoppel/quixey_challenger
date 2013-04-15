@@ -33,13 +33,6 @@ main = do args <- getArgs
           mainLoop cfg
 
 
-binary :: Int -> IO [Int]
-binary 0 = return $ []
-binary n = do
-    b <- randomIO
-    bs <- binary (n-1)
-    return $ (if b then 1 else -1):bs
-
 mainLoop :: Config -> IO ()
 mainLoop cfg = do
     let file = filePath cfg
