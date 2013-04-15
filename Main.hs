@@ -10,7 +10,7 @@ import Data.List.Split
 import System.Timeout
 import System.Directory
 import Mutate
-import Data.Text (pack, unpack,  strip)
+import Data.Text (pack, unpack, strip)
 import Data.Text.Read (hexadecimal)
 import qualified Data.Map as M
 
@@ -21,7 +21,7 @@ import Language.Java.Pretty
 import Symbolic
 import Sketch
 
-import Tarski.Config ( readConfig, filePath, testCases )
+import Tarski.Config ( readConfig, filePath, testCases, methodName )
 
 main :: IO ()
 main = do args <- getArgs
@@ -30,7 +30,8 @@ main = do args <- getArgs
                       _   -> error "QC requires a single argument denoting a configuration file"
           filepath <- return $ filePath cfg
           testcases <- return $ testCases cfg
-          mainLoop filepath testcases
+          method <- return $ methodName cfg
+          mainLoop filepath testcases method
 
 {-
 paren_test = [
@@ -65,10 +66,10 @@ is_nested (1:xs) n = is_nested xs (n+1)
 is_nested (-1:_) 0 = 0
 is_nested (-1:xs) n = is_nested xs (n-1)
 
-mainLoop :: String -> String -> IO ()
-mainLoop file tests = do
+mainLoop :: String -> String -> String -> IO ()
+mainLoop file tests method = do
     program <- readFile file
-    (state, ideas, qs) <- return $ genSketches program "is_properly_nested"
+    (state, ideas, qs) <- return $ genSketches program method
     best <- test_ideas state (reverse ideas) (reverse qs) (read tests :: Tests)
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
