@@ -23,14 +23,16 @@ import Sketch
 
 import Tarski.Config ( readConfig, filePath, testCases, methodName )
 
+type Tests = [([Int],Int)]
+
 main :: IO ()
 main = do args <- getArgs
           cfg <- case args of
                       [s] -> readConfig s
                       _   -> error "QC requires a single argument denoting a configuration file"
-          filepath <- return $ filePath cfg
-          testcases <- return $ testCases cfg
-          method <- return $ methodName cfg
+          let filepath = filePath cfg
+              testcases = read (testCases cfg) :: Tests
+              method = methodName cfg
           mainLoop filepath testcases method
 
 {-
@@ -45,7 +47,6 @@ paren_test = [
              ]
              -}
 
-type Tests = [([Int],Int)]
 
 make_in = do
     n <- randomRIO (0 :: Int, 2)
@@ -66,11 +67,11 @@ is_nested (1:xs) n = is_nested xs (n+1)
 is_nested (-1:_) 0 = 0
 is_nested (-1:xs) n = is_nested xs (n-1)
 
-mainLoop :: String -> String -> String -> IO ()
+mainLoop :: String -> Tests -> String -> IO ()
 mainLoop file tests method = do
     program <- readFile file
     (state, ideas, qs) <- return $ genSketches program method
-    best <- test_ideas state (reverse ideas) (reverse qs) (read tests :: Tests)
+    best <- test_ideas state (reverse ideas) (reverse qs) tests
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
