@@ -10,10 +10,11 @@ import Data.Text ( pack )
 
 import Data.Configurator (load, Worth(..), lookupDefault, require)
 
+type Tests = [([Int],Int)]
 
 data Config = Config {
                       filePath :: String,
-                      testCases :: String,
+                      testCases :: Tests,
                       methodName :: String
                      }
 
@@ -25,6 +26,6 @@ readConfig f = do config <- load [Required f]
                   tc <- require config $ pack "paren-test"
                   mn <- require config $ pack "method-name"
                   return Config { filePath=fp,
-                                  testCases=tc,
+                                  testCases=(read tc :: Tests),
                                   methodName=mn
                                 }

@@ -21,7 +21,7 @@ import Language.Java.Pretty
 import Symbolic
 import Sketch
 
-import Tarski.Config ( readConfig, filePath, testCases, methodName )
+import Tarski.Config ( Config, readConfig, filePath, testCases, methodName )
 
 type Tests = [([Int],Int)]
 
@@ -30,10 +30,7 @@ main = do args <- getArgs
           cfg <- case args of
                       [s] -> readConfig s
                       _   -> error "QC requires a single argument denoting a configuration file"
-          let filepath = filePath cfg
-              testcases = read (testCases cfg) :: Tests
-              method = methodName cfg
-          mainLoop filepath testcases method
+          mainLoop cfg
 
 {-
 paren_test = [
@@ -67,10 +64,13 @@ is_nested (1:xs) n = is_nested xs (n+1)
 is_nested (-1:_) 0 = 0
 is_nested (-1:xs) n = is_nested xs (n-1)
 
-mainLoop :: String -> Tests -> String -> IO ()
-mainLoop file tests method = do
+mainLoop :: Config -> IO ()
+mainLoop cfg = do
+    let file = filePath cfg
+        tests = testCases cfg
+        methodname = methodName cfg
     program <- readFile file
-    (state, ideas, qs) <- return $ genSketches program method
+    (state, ideas, qs) <- return $ genSketches program methodname
     best <- test_ideas state (reverse ideas) (reverse qs) tests
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
