@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 module Sketch where
 
 import qualified Data.Set as Set

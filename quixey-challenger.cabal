@@ -15,6 +15,11 @@ cabal-version:       >=1.8
 
 
 executable quixey-challenger
+
+  Extensions:
+    FlexibleContexts
+    TemplateHaskell
+
   Main-Is: Main.hs
 
   Ghc-Options:

@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 module Symbolic where
 
 import Control.Monad
@@ -111,10 +110,8 @@ tempVar t = do n <- use counter
                addZ3 $ DeclareConst v t
                return v
 
--- huh?
 isSketchVar :: String -> Symb Bool
-isSketchVar n = do skst <- use sketchState
-                   vs <- return $ skst ^. sketchVars
+isSketchVar n = do vs <- use (sketchState . sketchVars)
                    return $ Set.member n vs
 
 vName v k = v ++ "_" ++ (show k)
@@ -372,8 +369,7 @@ declare n = do addZ3 $ DeclareConst n ZInt
                return ()
 
 declareSketchVars :: Symb ()
-declareSketchVars = do skst <- use sketchState
-                       skvs <- return $ skst ^. sketchVars
+declareSketchVars = do skvs <- use (sketchState . sketchVars)
                        mapM_ declare (Set.toList skvs)
                        return ()
 
@@ -382,7 +378,7 @@ evalSketch dec skst tests maxunroll = concat $ map pretty $ (execState runTests 
  where
     runTests :: Symb ()
     runTests = do declareSketchVars
-                  mapM_ (uncurry $ symbTest dec) tests --here? uncurry so it can deal with tuples, partially apply declaration
+                  mapM_ (uncurry $ symbTest dec) tests
                   addZ3 CheckSat
                   addZ3 GetModel
                   return ()

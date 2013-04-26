@@ -25,7 +25,7 @@ import Sketch
 
 import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
 
-type Tests = [([Int],Int)] -- modify this to be configurable?
+type Tests = [([Int],Int)] -- modify this? more general. can't be configurable as types are done
 
 -- deals with configuration file
 main :: IO ()
@@ -42,13 +42,11 @@ mainLoop cfg = do
         methodname = cfg ^. methodName
         holedepth = cfg ^. holeDepth
     program <- readFile file
-    (state, ideas, qs) <- return $ genSketches program methodname holedepth
+    let (state, ideas, qs) = genSketches program methodname holedepth
     best <- test_ideas state (reverse ideas) (reverse qs) cfg
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
-        Just (code, model) -> do
-            final_code <- return $ (constantFold model code) :: IO MemberDecl
-            putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
+        Just (code, model) -> putStrLn $ prettyPrint $ constantFold model code
 
 test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> Config -> IO (Maybe (MemberDecl, M.Map String Int))
 test_ideas st [] _ _ = return $ Nothing
@@ -62,11 +60,11 @@ test_idea :: SketchState -> MemberDecl -> MemberDecl -> Config -> IO (Maybe (M.M
 test_idea st idea q cfg = do
     let tests     = cfg ^. testCases
         maxunroll = cfg ^. maxUnrollDepth
+        z3in = evalSketch idea st tests maxunroll
     putStrLn $ prettyPrint q
-    z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests maxunroll))
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
-    (head:model) <- return $ lines out
+    let (head:model) = lines out
     if head == "unsat"
      then return Nothing
      else return $ Just (str_to_map $ tail model)
