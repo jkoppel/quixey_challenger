@@ -378,10 +378,12 @@ declareSketchVars = do skst <- use sketchState
                        return ()
 
 evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> Int -> String
-evalSketch dec skst tests maxunroll = concat $ map pretty $ z3 $ execState runTests (startState skst maxunroll)
+evalSketch dec skst tests maxunroll = concat $ map pretty $ (execState runTests (startState skst maxunroll)) ^. z3
  where
-    runTests = do declareSketchVars -- why does this expect to be [Z3] -> f0 [Z3]?
+    runTests :: Symb ()
+    runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests --here? uncurry so it can deal with tuples, partially apply declaration
                   addZ3 CheckSat
                   addZ3 GetModel
                   return ()
+

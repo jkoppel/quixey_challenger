@@ -60,8 +60,8 @@ test_ideas st (idea:ideas) (q:qs) cfg = do
 
 test_idea :: SketchState -> MemberDecl -> MemberDecl -> Config -> IO (Maybe (M.Map String Int))
 test_idea st idea q cfg = do
-    tests <- cfg ^. testCases
-    maxunroll <- cfg ^. maxUnrollDepth
+    let tests     = cfg ^. testCases
+        maxunroll = cfg ^. maxUnrollDepth
     putStrLn $ prettyPrint q
     z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests maxunroll))
     writeFile "z3.smt2" z3in
