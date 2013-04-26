@@ -16,6 +16,8 @@ import qualified Data.Map as M
 
 import Data.List
 
+import Control.Lens.Getter ( (^.) )
+
 import Language.Java.Syntax
 import Language.Java.Pretty
 import Symbolic hiding (maxUnrollDepth)
@@ -36,11 +38,11 @@ main = do args <- getArgs
 
 mainLoop :: Config -> IO ()
 mainLoop cfg = do
-    let file = filePath cfg
-        tests = testCases cfg
-        methodname = methodName cfg
-        holedepth = holeDepth cfg
-        maxunroll = maxUnrollDepth cfg
+    let file = cfg ^. filePath
+        tests = cfg ^. testCases
+        methodname = cfg ^. methodName
+        holedepth = cfg ^. holeDepth
+        maxunroll = cfg ^. maxUnrollDepth
     program <- readFile file
     (state, ideas, qs) <- return $ genSketches program methodname holedepth
     best <- test_ideas state (reverse ideas) (reverse qs) tests maxunroll

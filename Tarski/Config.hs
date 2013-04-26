@@ -1,3 +1,5 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Tarski.Config (
          Config,
          filePath,
@@ -10,19 +12,21 @@ module Tarski.Config (
 
 import Data.Text ( pack )
 
+import Control.Lens ( makeLenses )
+
 import Data.Configurator (load, Worth(..), lookupDefault, require)
 
 type Tests = [([Int],Int)]
 
 data Config = Config {
-                      filePath :: String,
-                      testCases :: Tests,
-                      methodName :: String,
-                      holeDepth :: Int,
-                      maxUnrollDepth :: Int
+                      _filePath :: String,
+                      _testCases :: Tests,
+                      _methodName :: String,
+                      _holeDepth :: Int,
+                      _maxUnrollDepth :: Int
                      }
 
-
+makeLenses ''Config
 
 readConfig :: String -> IO Config
 readConfig f = do config <- load [Required f]
@@ -31,9 +35,10 @@ readConfig f = do config <- load [Required f]
                   mn  <- require config $ pack "method-name"
                   hd  <- require config $ pack "hole-depth"
                   mud <- require config $ pack "max-unroll-depth"
-                  return Config { filePath=fp,
-                                  testCases=(read tc :: Tests),
-                                  methodName=mn,
-                                  holeDepth=hd,
-                                  maxUnrollDepth=mud
+                  return Config {
+                                  _filePath=fp,
+                                  _testCases=(read tc :: Tests),
+                                  _methodName=mn,
+                                  _holeDepth=hd,
+                                  _maxUnrollDepth=mud
                                 }
