@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Sketch where
 
 import qualified Data.Set as Set
@@ -6,6 +7,7 @@ import Data.Monoid
 
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Lens ( makeLenses, (^.), (+=), (.=), use )
 
 import Language.Java.Parser
 import Language.Java.Syntax
@@ -18,23 +20,26 @@ import KureCong
 import Mutate hiding (not)
 
 data SketchState = SketchState {
-                          sketchVars :: Set.Set String,
-                          nVars :: Int
+                          _sketchVars :: Set.Set String,
+                          _nVars :: Int
                    } deriving (Show)
+
+makeLenses ''SketchState
 
 type Sketch = State SketchState
 
 startSketchState = SketchState  {
-                                sketchVars = Set.empty,
-                                nVars = 0
+                                _sketchVars = Set.empty,
+                                _nVars = 0
                  }
 
 newSketchVar :: Sketch String
-newSketchVar = do n <- gets nVars
-                  modify (\s -> s {nVars=n+1})
-                  vs <- gets sketchVars
+newSketchVar = do s <- get
+                  n <- use nVars
+                  nVars += 1
+                  vs <- use sketchVars
                   let nv = "sketch" ++ (show n)
-                  modify (\s -> s {sketchVars=Set.insert nv vs})
+                  sketchVars .= Set.insert nv vs
                   return nv
 
 sketchConst :: Sketch Exp

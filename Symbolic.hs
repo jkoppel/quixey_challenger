@@ -1,7 +1,9 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Symbolic where
 
 import Control.Monad
 import Control.Monad.State
+import Control.Lens ( makeLenses, (^.), (.=), use, (+=), (-=) )
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -32,15 +34,17 @@ data Z3 = Assert Z3
         deriving (Show, Eq)
 
 
-data SymbState = SymbState { counter :: Int,
-                             z3 :: [Z3],
-                             pathGuard :: [Z3],
-                             retVar :: String,
-                             varLab :: Map.Map String Int,
-                             sketchState :: SketchState,
-                             unrollDepth :: Int,
-                             maxUnrollDepth :: Int
+data SymbState = SymbState { _counter :: Int,
+                             _z3 :: [Z3],
+                             _pathGuard :: [Z3],
+                             _retVar :: String,
+                             _varLab :: Map.Map String Int,
+                             _sketchState :: SketchState,
+                             _unrollDepth :: Int,
+                             _maxUnrollDepth :: Int
                              } deriving (Show)
+
+makeLenses ''SymbState
 
 class Pretty a where
       pretty :: a -> String
@@ -69,53 +73,55 @@ instance Pretty Z3 where
   pretty GetModel = "(get-model)"
 
 startState :: SketchState -> Int -> SymbState
-startState skst maxunroll = SymbState {counter = 0,
-                             z3 = [],
-                             pathGuard = [],
-                             retVar = "",
-                             varLab = Map.insert "A" 0 Map.empty,
-                             sketchState = skst,
-                             unrollDepth = 0,
-                             maxUnrollDepth = maxunroll}
+startState skst maxunroll = SymbState {_counter = 0,
+                                       _z3 = [],
+                                       _pathGuard = [],
+                                       _retVar = "",
+                                       _varLab = Map.insert "A" 0 Map.empty,
+                                       _sketchState = skst,
+                                       _unrollDepth = 0,
+                                       _maxUnrollDepth = maxunroll}
 
 type Symb = State SymbState
 
 pushGuard :: Z3 -> Symb ()
-pushGuard z = do g <- gets pathGuard
-                 modify (\s -> s {pathGuard = z : g})
+pushGuard z = do g <- use pathGuard
+                 pathGuard .= z : g
                  return ()
 
 popGuard :: Symb ()
-popGuard = do g <- gets pathGuard
-              modify (\s -> s {pathGuard = tail g})
+popGuard = do g <- use pathGuard
+              pathGuard .= tail g
               return ()
 
 getGuard :: Symb Z3
-getGuard = do g <- gets pathGuard
+getGuard = do g <- use pathGuard
               return $ foldr (ZBinOp "and") (ZVar "true") g
 
 addZ3 :: Z3 -> Symb ()
-addZ3 e = do z <- gets z3
+addZ3 e = do z <- use z3
              let z' = z ++ [e]
-             modify (\s -> s {z3 = z'})
+             z3 .= z'
              return ()
 
 tempVar :: ZType -> Symb String
-tempVar t = do n <- gets counter
-               modify (\s -> s {counter=n+1})
+tempVar t = do n <- use counter
+               counter += 1
                let v = "var" ++ (show n)
                addZ3 $ DeclareConst v t
                return v
 
+-- huh?
 isSketchVar :: String -> Symb Bool
-isSketchVar n = do vs <- gets (sketchVars . sketchState)
+isSketchVar n = do skst <- use sketchState
+                   vs <- return $ skst ^. sketchVars
                    return $ Set.member n vs
 
 vName v k = v ++ "_" ++ (show k)
 
 getVar :: String -> Symb String
 getVar var = do
-    m <- gets varLab
+    m <- use varLab
     b <- isSketchVar var
     if b
      then return var
@@ -125,11 +131,11 @@ getVar var = do
 
 overwriteVar :: String -> ZType -> Symb ()
 overwriteVar n t = do
-    m <- gets varLab
+    m <- use varLab
     let k' = case Map.lookup n m of
                Nothing -> 0
                Just k -> k+1
-    modify (\s -> s {varLab = Map.insert n k' m})
+    varLab .= Map.insert n k' m
     addZ3 $ DeclareConst (n ++ "_" ++ (show k')) t
     return ()
 
@@ -159,26 +165,26 @@ symbStmt (ExpStmt e) = do symbExp e
                           return ()
 symbStmt (Return (Just e)) = do v <- symbExp e
                                 g <- getGuard
-                                r <- gets retVar
+                                r <- use retVar
                                 zAssert $ ZBinOp "=>" g (ZBinOp "=" (ZVar r) (ZVar v))
                                 return ()
 symbStmt (IfThen e s) = symbStmt $ IfThenElse e s Empty
 symbStmt (IfThenElse e s1 s2) = do
     v1 <- symbExp e
-    m1 <- gets varLab
+    m1 <- use varLab
     pushGuard (ZVar v1)
     v2 <- symbStmt s1
     popGuard
-    m2 <- gets varLab
+    m2 <- use varLab
     pushGuard $ ZNot (ZVar v1)
     v3 <- symbStmt s2
     popGuard
-    m3 <- gets varLab
+    m3 <- use varLab
     g <- getGuard
     let g1 = ZBinOp "and" g (ZVar v1)
     let g2 = ZBinOp "and" g (ZNot (ZVar v1))
     mapM ((flip overwriteVar) ZInt . fst) (filter ((/='A') . head . fst) (Map.toList m1))
-    m4 <- gets varLab
+    m4 <- use varLab
     mapM (\(x,n) -> zAssert $ ZBinOp "=>" g1 (ZBinOp "=" (mVar x m4) (mVar x m2)))
          (Map.toList m1)
     mapM (\(x,n) -> zAssert $ ZBinOp "=>" g2 (ZBinOp "=" (mVar x m4) (branch2Var x m1 m2 m3)))
@@ -194,17 +200,17 @@ symbStmt (IfThenElse e s1 s2) = do
                             else
                               mVar x m1
 symbStmt (While e s) = do
-       d <- gets unrollDepth
-       m <- gets maxUnrollDepth
+       d <- use unrollDepth
+       m <- use maxUnrollDepth
        if d >= m
         then
          do v <- symbExp e
             zAssert $ ZNot (ZVar v)
             return ()
         else
-         do modify (\s -> s {unrollDepth=d+1})
+         do unrollDepth +=1
             symbStmt $ IfThenElse e (StmtBlock $ Block [BlockStmt s, BlockStmt $ While e s]) Empty
-            modify (\s -> s {unrollDepth=d})
+            unrollDepth -= 1
             return ()
 symbStmt s = fail (prettyPrint s)
 
@@ -345,7 +351,7 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   len <- getVar "length"
   zAssert $ ZBinOp "=" (ZVar len) (BV32 $ head $ inputs)
 
-  modify (\s -> s {retVar = r})
+  retVar .= r
   mapM_ (\(e,i) -> do
     v <- symbExp e
     zAssert $ ZBinOp "=" (ZVar v) (ZSelect (ZVar arr) (symbLit $ Int i))) (zip expInputs [0..])
@@ -366,15 +372,16 @@ declare n = do addZ3 $ DeclareConst n ZInt
                return ()
 
 declareSketchVars :: Symb ()
-declareSketchVars = do skvs <- gets (sketchVars . sketchState)
+declareSketchVars = do skst <- use sketchState
+                       skvs <- return $ skst ^. sketchVars
                        mapM_ declare (Set.toList skvs)
                        return ()
 
 evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> Int -> String
 evalSketch dec skst tests maxunroll = concat $ map pretty $ z3 $ execState runTests (startState skst maxunroll)
  where
-    runTests = do declareSketchVars
-                  mapM_ (uncurry $ symbTest dec) tests
+    runTests = do declareSketchVars -- why does this expect to be [Z3] -> f0 [Z3]?
+                  mapM_ (uncurry $ symbTest dec) tests --here? uncurry so it can deal with tuples, partially apply declaration
                   addZ3 CheckSat
                   addZ3 GetModel
                   return ()

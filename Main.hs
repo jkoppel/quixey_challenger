@@ -39,29 +39,29 @@ main = do args <- getArgs
 mainLoop :: Config -> IO ()
 mainLoop cfg = do
     let file = cfg ^. filePath
-        tests = cfg ^. testCases
         methodname = cfg ^. methodName
         holedepth = cfg ^. holeDepth
-        maxunroll = cfg ^. maxUnrollDepth
     program <- readFile file
     (state, ideas, qs) <- return $ genSketches program methodname holedepth
-    best <- test_ideas state (reverse ideas) (reverse qs) tests maxunroll
+    best <- test_ideas state (reverse ideas) (reverse qs) cfg
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
             final_code <- return $ (constantFold model code) :: IO MemberDecl
             putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
-test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> Tests -> Int -> IO (Maybe (MemberDecl, M.Map String Int))
-test_ideas st [] _ _ _ = return $ Nothing
-test_ideas st (idea:ideas) (q:qs) tests maxunroll = do
-    result <- test_idea st idea q tests maxunroll
+test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> Config -> IO (Maybe (MemberDecl, M.Map String Int))
+test_ideas st [] _ _ = return $ Nothing
+test_ideas st (idea:ideas) (q:qs) cfg = do
+    result <- test_idea st idea q cfg
     case result of
-        Nothing -> test_ideas st ideas qs tests maxunroll
+        Nothing -> test_ideas st ideas qs cfg
         Just model -> return $ Just (idea, model)
 
-test_idea :: SketchState -> MemberDecl -> MemberDecl -> Tests -> Int -> IO (Maybe (M.Map String Int))
-test_idea st idea q tests maxunroll = do
+test_idea :: SketchState -> MemberDecl -> MemberDecl -> Config -> IO (Maybe (M.Map String Int))
+test_idea st idea q cfg = do
+    tests <- cfg ^. testCases
+    maxunroll <- cfg ^. maxUnrollDepth
     putStrLn $ prettyPrint q
     z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests maxunroll))
     writeFile "z3.smt2" z3in
