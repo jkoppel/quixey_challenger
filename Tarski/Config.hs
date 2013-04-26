@@ -3,7 +3,9 @@ module Tarski.Config (
          filePath,
          testCases,
          methodName,
-         readConfig
+         readConfig,
+         holeDepth,
+         maxUnrollDepth
        ) where
 
 import Data.Text ( pack )
@@ -15,17 +17,23 @@ type Tests = [([Int],Int)]
 data Config = Config {
                       filePath :: String,
                       testCases :: Tests,
-                      methodName :: String
+                      methodName :: String,
+                      holeDepth :: Int,
+                      maxUnrollDepth :: Int
                      }
 
 
 
 readConfig :: String -> IO Config
 readConfig f = do config <- load [Required f]
-                  fp <- require config $ pack "file-path"
-                  tc <- require config $ pack "paren-test"
-                  mn <- require config $ pack "method-name"
+                  fp  <- require config $ pack "file-path"
+                  tc  <- require config $ pack "paren-test"
+                  mn  <- require config $ pack "method-name"
+                  hd  <- require config $ pack "hole-depth"
+                  mud <- require config $ pack "max-unroll-depth"
                   return Config { filePath=fp,
                                   testCases=(read tc :: Tests),
-                                  methodName=mn
+                                  methodName=mn,
+                                  holeDepth=hd,
+                                  maxUnrollDepth=mud
                                 }

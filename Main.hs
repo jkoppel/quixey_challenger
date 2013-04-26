@@ -18,13 +18,14 @@ import Data.List
 
 import Language.Java.Syntax
 import Language.Java.Pretty
-import Symbolic
+import Symbolic hiding (maxUnrollDepth)
 import Sketch
 
-import Tarski.Config ( Config, readConfig, filePath, testCases, methodName )
+import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
 
-type Tests = [([Int],Int)]
+type Tests = [([Int],Int)] -- modify this to be configurable?
 
+-- deals with configuration file
 main :: IO ()
 main = do args <- getArgs
           cfg <- case args of
@@ -38,27 +39,29 @@ mainLoop cfg = do
     let file = filePath cfg
         tests = testCases cfg
         methodname = methodName cfg
+        holedepth = holeDepth cfg
+        maxunroll = maxUnrollDepth cfg
     program <- readFile file
-    (state, ideas, qs) <- return $ genSketches program methodname
-    best <- test_ideas state (reverse ideas) (reverse qs) tests
+    (state, ideas, qs) <- return $ genSketches program methodname holedepth
+    best <- test_ideas state (reverse ideas) (reverse qs) tests maxunroll
     case best of
         Nothing -> putStrLn $ unlines $ map prettyPrint ideas
         Just (code, model) -> do
             final_code <- return $ (constantFold model code) :: IO MemberDecl
             putStrLn ((prettyPrint final_code) :: String)--((show model) ++ " " ++ (prettyPrint code))
 
-test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> Tests -> IO (Maybe (MemberDecl, M.Map String Int))
-test_ideas st [] _ _ = return $ Nothing
-test_ideas st (idea:ideas) (q:qs) tests = do
-    result <- test_idea st idea q tests
+test_ideas :: SketchState -> [MemberDecl] -> [MemberDecl] -> Tests -> Int -> IO (Maybe (MemberDecl, M.Map String Int))
+test_ideas st [] _ _ _ = return $ Nothing
+test_ideas st (idea:ideas) (q:qs) tests maxunroll = do
+    result <- test_idea st idea q tests maxunroll
     case result of
-        Nothing -> test_ideas st ideas qs tests
+        Nothing -> test_ideas st ideas qs tests maxunroll
         Just model -> return $ Just (idea, model)
 
-test_idea :: SketchState -> MemberDecl -> MemberDecl -> Tests -> IO (Maybe (M.Map String Int))
-test_idea st idea q tests = do
+test_idea :: SketchState -> MemberDecl -> MemberDecl -> Tests -> Int -> IO (Maybe (M.Map String Int))
+test_idea st idea q tests maxunroll = do
     putStrLn $ prettyPrint q
-    z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests))
+    z3in <- return $ ({-"(set-logic QF_AUFBV)\n" ++ -}(evalSketch idea st tests maxunroll))
     writeFile "z3.smt2" z3in
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     (head:model) <- return $ lines out

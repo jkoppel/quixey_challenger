@@ -63,7 +63,7 @@ symbStmt e s1 s2 =
        where g is all the guards anded-together, along with v1,
        to force new x to take the right value -}
 
-Documentation note: 
+Documentation note:
 
 overwriteVar x marks that you are about to create a "new" version of x -- ie, it increments the typeMap
 getVar x gets the current SSA version of x

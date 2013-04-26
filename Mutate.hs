@@ -182,9 +182,9 @@ zero = Mutation { applicable = is_int,
 not = Mutation { applicable = is_bool,
                  mutate = \e -> PreNot e }
 
-change_lte = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m], 
+change_lte = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m],
                         mutate = \(BinOp e1 _ e2) -> BinOp e1 LThanE e2 }
-change_lt = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m], 
+change_lt = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m],
                         mutate = \(BinOp e1 _ e2) -> BinOp e1 LThan e2 }
 
 
@@ -229,7 +229,7 @@ mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
                                             else
                                               do m <- lift $ lift $ randElt goodMutations
                                                  return $ mutate m e
-                                       
+
 
 mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) GenericJava
 mutateExp n = anybuR $ promoteR $ mutateExp' n
@@ -248,14 +248,14 @@ mutateProgram g str = case parser compilationUnit str of
                                          t'' = runRandT t' g'
                                          (t''', g'') = runKureM (\(GCompilationUnit c,h) -> (c,h)) (error "thing failed") t''  in
                                      (show $ pretty t''' , g'')
-                                
+
 
 
 constantFold' :: Map.Map String Int -> Rewrite Context KureM Exp
 constantFold' m = translate $ \_ e -> return $ fold_it e m
 
 fold_it :: Exp -> Map.Map String Int -> Exp
-fold_it e m = case e of 
+fold_it e m = case e of
         ExpName (Name [Ident v]) ->
                   case Map.lookup v m of
                        Just n -> Lit $ Int (fromIntegral n)

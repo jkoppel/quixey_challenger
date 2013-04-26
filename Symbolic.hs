@@ -14,8 +14,6 @@ import Debug.Trace
 
 import Sketch
 
-maxUnrollDepth = 2
-
 data ZType = ZInt | ZBool | ZArray ZType ZType
              deriving (Show, Eq)
 
@@ -32,7 +30,7 @@ data Z3 = Assert Z3
         | CheckSat
         | GetModel
         deriving (Show, Eq)
-          
+
 
 data SymbState = SymbState { counter :: Int,
                              z3 :: [Z3],
@@ -40,7 +38,8 @@ data SymbState = SymbState { counter :: Int,
                              retVar :: String,
                              varLab :: Map.Map String Int,
                              sketchState :: SketchState,
-                             unrollDepth :: Int
+                             unrollDepth :: Int,
+                             maxUnrollDepth :: Int
                              } deriving (Show)
 
 class Pretty a where
@@ -60,7 +59,7 @@ instance Pretty Z3 where
                         "(_ bv" ++ (show n) ++ " 32)"
                       else
                         "(bvneg " ++ (pretty (BV32 (-n))) ++ ")"
-  pretty (ZSelect arr n) = "(select " ++ (pretty arr) ++ " " ++ (pretty n) ++ ")"                      
+  pretty (ZSelect arr n) = "(select " ++ (pretty arr) ++ " " ++ (pretty n) ++ ")"
   pretty (ZStore arr n e) = "(store " ++ (pretty arr) ++ " " ++ (pretty n) ++ (pretty e) ++ ")"
   pretty (ZBinOp s z1 z2) = "(" ++ s ++ " " ++ (pretty z1) ++ " " ++ (pretty z2) ++ ")"
   pretty (ZNot z) = "(not " ++ (pretty z) ++ ")"
@@ -69,14 +68,15 @@ instance Pretty Z3 where
   pretty CheckSat = "(check-sat)"
   pretty GetModel = "(get-model)"
 
-startState :: SketchState -> SymbState
-startState skst = SymbState {counter = 0,
+startState :: SketchState -> Int -> SymbState
+startState skst maxunroll = SymbState {counter = 0,
                              z3 = [],
                              pathGuard = [],
                              retVar = "",
                              varLab = Map.insert "A" 0 Map.empty,
                              sketchState = skst,
-                             unrollDepth = 0}
+                             unrollDepth = 0,
+                             maxUnrollDepth = maxunroll}
 
 type Symb = State SymbState
 
@@ -93,7 +93,7 @@ popGuard = do g <- gets pathGuard
 getGuard :: Symb Z3
 getGuard = do g <- gets pathGuard
               return $ foldr (ZBinOp "and") (ZVar "true") g
-     
+
 addZ3 :: Z3 -> Symb ()
 addZ3 e = do z <- gets z3
              let z' = z ++ [e]
@@ -114,7 +114,7 @@ isSketchVar n = do vs <- gets (sketchVars . sketchState)
 vName v k = v ++ "_" ++ (show k)
 
 getVar :: String -> Symb String
-getVar var = do 
+getVar var = do
     m <- gets varLab
     b <- isSketchVar var
     if b
@@ -124,7 +124,7 @@ getVar var = do
               Just k -> return $ vName var k
 
 overwriteVar :: String -> ZType -> Symb ()
-overwriteVar n t = do 
+overwriteVar n t = do
     m <- gets varLab
     let k' = case Map.lookup n m of
                Nothing -> 0
@@ -195,7 +195,8 @@ symbStmt (IfThenElse e s1 s2) = do
                               mVar x m1
 symbStmt (While e s) = do
        d <- gets unrollDepth
-       if d >= maxUnrollDepth
+       m <- gets maxUnrollDepth
+       if d >= m
         then
          do v <- symbExp e
             zAssert $ ZNot (ZVar v)
@@ -205,16 +206,16 @@ symbStmt (While e s) = do
             symbStmt $ IfThenElse e (StmtBlock $ Block [BlockStmt s, BlockStmt $ While e s]) Empty
             modify (\s -> s {unrollDepth=d})
             return ()
-symbStmt s = fail (prettyPrint s)            
+symbStmt s = fail (prettyPrint s)
 
 symbVarDecl :: Type -> VarDecl -> Symb ()
-symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do 
+symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do
     overwriteVar n ZInt
     n' <- getVar n
     zAssert $ ZBinOp "=" (ZVar n') (BV32 0)
     {-case vinit of
          Nothing -> return ()
-         Just (InitExp e) -> do 
+         Just (InitExp e) -> do
             overwriteVar n ZInt
             n'' <- getVar n
             v <- symbExp e
@@ -258,7 +259,7 @@ ArrayAccess (ArrayIndex arr n)
     e' <- symbExp e
     zAssert $ ZBinOp "=" (ZVar v) (ZStore (ZVar arr') (ZVar n') (ZVar e'))
     return v
--}    
+-}
 
 --symbExp (PostIncrement (ExpName (Name [Ident v]))) = symbExp $ Assign (NameLhs (Name [Ident v])) AddA (Lit $ Int 1)
 symbExp (Assign (NameLhs (Name [Ident v])) AddA e) = symbExp $ Assign (NameLhs (Name [Ident v])) EqualA (BinOp e Add (ExpName (Name [Ident v])))
@@ -287,7 +288,7 @@ symbExp (BinOp e1 o e2) = do v1 <- symbExp e1
 symbExp (ExpName (Name [Ident n])) = getVar n
 symbExp (ExpName (Name xs)) = getVar "length"
 symbExp e = fail ("BAD: " ++ show e)
-                             
+
 symbAssign :: String -> Exp -> Symb String
 symbAssign n e = do ev <- symbExp e
                     overwriteVar n ZInt
@@ -348,10 +349,10 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   mapM_ (\(e,i) -> do
     v <- symbExp e
     zAssert $ ZBinOp "=" (ZVar v) (ZSelect (ZVar arr) (symbLit $ Int i))) (zip expInputs [0..])
-  symbBlock b  
+  symbBlock b
   where
     expInputs = map (Lit . Int . toInteger) (tail inputs)
-    
+
 
   {-mapM_ (uncurry symbAssign) (zip argNames expInputs)
   symbBlock b
@@ -369,8 +370,8 @@ declareSketchVars = do skvs <- gets (sketchVars . sketchState)
                        mapM_ declare (Set.toList skvs)
                        return ()
 
-evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> String
-evalSketch dec skst tests = concat $ map pretty $ z3 $ execState runTests (startState skst)
+evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> Int -> String
+evalSketch dec skst tests maxunroll = concat $ map pretty $ z3 $ execState runTests (startState skst maxunroll)
  where
     runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests

@@ -20,8 +20,8 @@ import Language.KURE ( Node, Generic, Walker, MonadCatch, AbsolutePath, numChild
 import Language.KURE.Injection ( Injection, inject, retract)
 import Language.KURE.Utilities ( childLgeneric )
 
-import Language.Haskell.TH 
-import Language.Haskell.TH.Syntax 
+import Language.Haskell.TH
+import Language.Haskell.TH.Syntax
 
 import Control.Applicative ( Applicative )
 
@@ -55,7 +55,7 @@ generateGenericWalker :: Name -> [Name] -> Dec
 generateGenericWalker gname gcons =
   InstanceD [ClassP ''MonadCatch [VarT m], ClassP ''Applicative [VarT m]] (foldl AppT (ConT ''Walker) [ConT ''AbsolutePath, VarT m, ConT gname]) $ [
     FunD 'childL [Clause [VarP n]
-                         (NormalB ((AppE (VarE 'lens) (AppE (VarE 'translate) 
+                         (NormalB ((AppE (VarE 'lens) (AppE (VarE 'translate)
                                       (LamE [(VarP ctx), (VarP g)] $ CaseE (VarE g) (map makeCase gcons))))))
                          [] ]]
   where
@@ -75,10 +75,10 @@ generateConBoilerplate gname (con, typ, inf) = [generateInjection gname con typ,
                                                 generateWalker typ inf]
 
 generateInjection :: Name -> Name -> Type -> Dec
-generateInjection gname con typ = 
+generateInjection gname con typ =
   InstanceD [] (AppT (AppT (ConT ''Injection) (ConT tname)) (ConT gname)) $ [
     ValD (VarP 'inject) (NormalB (ConE con)) [],
-    
+
     FunD 'retract [Clause [ConP con [VarP c]] (NormalB (AppE (ConE 'Just) (VarE c))) [],
                    Clause [WildP] (NormalB (ConE 'Nothing)) []]
     ]
@@ -107,7 +107,7 @@ generateNode gname typ inf =
 generateWalker :: (?excl :: [Name]) => Type -> Info -> Dec
 generateWalker typ inf =
   InstanceD [ClassP ''MonadCatch [VarT m], ClassP ''Applicative [VarT m]] (AppT (AppT (AppT (ConT ''Walker) (ConT ''AbsolutePath)) (VarT m)) (ConT tname)) $ [
-                    FunD 'childL [Clause [VarP n] 
+                    FunD 'childL [Clause [VarP n]
                                          (NormalB
                                            (AppE (VarE 'lens) (AppE (VarE 'translate)
                                               (LamE [VarP ctx, VarP e]

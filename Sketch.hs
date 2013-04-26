@@ -17,8 +17,6 @@ import Kure
 import KureCong
 import Mutate hiding (not)
 
-hole_depth = 1
-
 data SketchState = SketchState {
                           sketchVars :: Set.Set String,
                           nVars :: Int
@@ -95,8 +93,8 @@ findMethod n = onetdT $ promoteT (findMethod' n)
 getMethod :: String -> CompilationUnit -> MemberDecl
 getMethod interest prog = runKureM id (error "did not find method") (apply (findMethod interest) initialContext (inject prog))
 
-makeSketchExp :: MemberDecl -> Map.Map Ident a -> (SketchState, Exp)
-makeSketchExp d m = swap $ runState (boundedExp m hole_depth) startSketchState
+makeSketchExp :: MemberDecl -> Map.Map Ident a -> Int -> (SketchState, Exp)
+makeSketchExp d m hole_depth = swap $ runState (boundedExp m hole_depth) startSketchState
 
 replaceExp' :: Int -> Exp -> Rewrite Context (ReaderT TypeMap (StateT Int KureM)) Exp
 replaceExp' n f = translate $ \_ e -> do l <- lift nextLabel
@@ -110,7 +108,7 @@ replaceExp' n f = translate $ \_ e -> do l <- lift nextLabel
                                                  return e
                                                else
                                                 return f
-                                       
+
 
 replaceExp :: Int -> Exp -> Rewrite Context (ReaderT TypeMap (StateT Int KureM)) GenericJava
 replaceExp n e = anybuR $ promoteR $ replaceExp' n e
@@ -121,14 +119,14 @@ doReplaceExp d i e = let tm = runKureM id (error "type map failed") (apply getTy
                          t' = evalStateT t 0 in
                      runKureM (\(GMemberDecl c) -> c) (error "memberdecl proj failed") t'
 
-genSketches :: String -> String -> (SketchState, [MemberDecl], [MemberDecl])
-genSketches src interest = case parser compilationUnit src of
-                              Left err -> error $ "Parse error" ++ (show err)
-                              Right tree -> let m = getMethod interest tree
-                                                tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject m))
-                                                tm' = Map.delete (Ident "A") $ Map.delete (Ident interest) tm
-                                                (skst, sexp) = makeSketchExp m tm'
-                                                nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject m))
-                                                sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]]
-                                                questions = [doReplaceExp m i (ExpName $ Name [Ident "????"]) | i <- [0..(nExp-1)]] in
-                                              (skst, sketches, questions)
+genSketches :: String -> String -> Int -> (SketchState, [MemberDecl], [MemberDecl])
+genSketches src interest hole_depth = case parser compilationUnit src of
+                                          Left err -> error $ "Parse error" ++ (show err)
+                                          Right tree -> let m = getMethod interest tree
+                                                            tm = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject m))
+                                                            tm' = Map.delete (Ident "A") $ Map.delete (Ident interest) tm
+                                                            (skst, sexp) = makeSketchExp m tm' hole_depth
+                                                            nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject m))
+                                                            sketches = [doReplaceExp m i sexp | i <- [0..(nExp-1)]]
+                                                            questions = [doReplaceExp m i (ExpName $ Name [Ident "????"]) | i <- [0..(nExp-1)]] in
+                                                          (skst, sketches, questions)
