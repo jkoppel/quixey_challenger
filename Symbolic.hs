@@ -20,12 +20,12 @@ data ZType = ZInt | ZBool | ZArray ZType ZType
              deriving (Show, Eq)
             -- *tInt | *tBool | *tArray x y (takes two Type parameters) | tVar?
 
-data Z3 = Assert Z3 -- Command
+data Z3 = Assert Z3 -- *Command, CmdAssert
         | DeclareConst String ZType -- Command, need to convert to DeclareFun
-        | ZIte Z3 Z3 Z3 -- ite
+        | ZIte Z3 Z3 Z3 -- *ite
         | ZVar String
-        | BV32 Int -- bv :: Integer -> Integer -> Expr, bv num w
-        | ZBinOp *String Z3 Z3
+        | BV32 Int -- bv :: Integer -> Integer -> Expr, bv num w, need a function to check if use bvneg
+        | ZBinOp String Z3 Z3 -- * lots of stuff, bv or not?
         | ZSelect Z3 Z3 -- *select :: Expr -> Expr -> Expr
         | ZStore Z3 Z3 Z3 -- *store :: Expr -> Expr -> Expr -> Expr
         | ZNot Z3 -- *not (I think, or bvnot?)
@@ -93,7 +93,7 @@ tempVar :: ZType -> Symb String
 tempVar t = do n <- use counter
                counter += 1
                let v = "var" ++ (show n)
-               addZ3 $ DeclareConst v t
+               addZ3 $ declareConst v t
                return v
 
 
@@ -130,13 +130,13 @@ overwriteVar n t = do
                Nothing -> 0
                Just k -> k+1
     varLab .= Map.insert n k' m
-    addZ3 $ DeclareConst (n ++ "_" ++ (show k')) t
+    addZ3 $ declareConst (n ++ "_" ++ (show k')) t
     return ()
 
 
 -- takes an expr and asserts it in the Command stack?
-zAssert :: Z3 -> Symb ()
-zAssert e = addZ3 $ Assert e
+zAssert :: Expr -> Symb ()
+zAssert e = addZ3 $ CmdAssert e
 
 -- fuck, I don't know
 symbMethodDecl :: MemberDecl -> Symb ()
@@ -146,7 +146,7 @@ symbMethodDecl (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) = do mapM_ symb
 
 -- er.. given a formal parameter, adds a constant to the stack?
 symbFormalParam :: FormalParam -> Symb ()
-symbFormalParam (FormalParam _ t _ (VarId (Ident n))) = do addZ3 $ DeclareConst n (symbType t)
+symbFormalParam (FormalParam _ t _ (VarId (Ident n))) = do addZ3 $ declareConst n (symbType t)
                                                            return ()
 
 -- mass block statements
@@ -333,10 +333,12 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   where
     expInputs = map (Lit . Int . toInteger) (tail inputs)
 
-
+-- syntactic sugar
+declareConst :: Name -> Type -> Command
+declareConst n t = CmdDeclareFun n [] t
 
 declare :: String -> Symb ()
-declare n = do addZ3 $ DeclareConst n tInt
+declare n = do addZ3 $ declareConst n tInt
                return ()
 
 declareSketchVars :: Symb ()
