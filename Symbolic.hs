@@ -25,7 +25,7 @@ data Z3 = Assert Z3 -- Command
         | ZIte Z3 Z3 Z3 -- ite
         | ZVar String
         | BV32 Int -- bv :: Integer -> Integer -> Expr, bv num w
-        | ZBinOp String Z3 Z3
+        | ZBinOp *String Z3 Z3
         | ZSelect Z3 Z3 -- *select :: Expr -> Expr -> Expr
         | ZStore Z3 Z3 Z3 -- *store :: Expr -> Expr -> Expr -> Expr
         | ZNot Z3 -- *not (I think, or bvnot?)
@@ -238,7 +238,7 @@ symbExp (ArrayAccess (ArrayIndex arr n)) = do
     where
     select :: String -> String -> String -> Z3
     select arr n upper =
-        ZIte (and (bvsge (ZVar n) (symbLit $ Int 0)) (bvslt (ZVar n) (ZVar upper)))
+        ite (and (bvsge (ZVar n) (symbLit $ Int 0)) (bvslt (ZVar n) (ZVar upper)))
              (select (ZVar arr) (ZVar n))
              (symbLit $ Int 123)
 
@@ -252,7 +252,7 @@ symbExp (Cond e1 e2 e3) = do
     v2 <- symbExp e2
     v3 <- symbExp e3
     v <- tempVar tInt
-    zAssert $ (ZVar v) === (ZIte (ZVar v1) (ZVar v2) (ZVar v3))
+    zAssert $ (ZVar v) === (ite (ZVar v1) (ZVar v2) (ZVar v3))
     return v
 symbExp (BinOp e1 o e2) | opType o == tBool = do
     v1 <- symbExp e1
