@@ -21,9 +21,9 @@ data ZType = ZInt | ZBool | ZArray ZType ZType
             -- *tInt | *tBool | *tArray x y (takes two Type parameters) | tVar?
 
 data Z3 = Assert Z3 -- *Command, CmdAssert
-        | DeclareConst String ZType -- Command, need to convert to DeclareFun
-        | ZIte Z3 Z3 Z3 -- *ite
-        | ZVar String
+        | DeclareConst String ZType -- *Command, need to convert to DeclareFun
+        | ZIte Z3 Z3 Z3 -- *ite, Expr
+        | ZVar String -- identifier? Name?
         | BV32 Int -- bv :: Integer -> Integer -> Expr, bv num w, need a function to check if use bvneg
         | ZBinOp String Z3 Z3 -- * lots of stuff, bv or not?
         | ZSelect Z3 Z3 -- *select :: Expr -> Expr -> Expr
@@ -38,10 +38,10 @@ data Z3 = Assert Z3 -- *Command, CmdAssert
 -- We should just work at the Commmand level?
 
 data SymbState = SymbState { _counter :: Int,
-                             _z3 :: Script,
-                             _pathGuard :: Script,
+                             _smt :: Script,
+                             _pathGuard :: Exprs
                              _retVar :: String,
-                             _varLab :: Map.Map String Int,
+                             _varLab :: Map.Map String Int, -- SSA; Single Static Assignment
                              _sketchState :: SketchState,
                              _unrollDepth :: Int,
                              _maxUnrollDepth :: Int
@@ -51,7 +51,7 @@ makeLenses ''SymbState
 
 startState :: SketchState -> Int -> SymbState
 startState skst maxunroll = SymbState {_counter = 0,
-                                       _smt = [],
+                                       _smt = [], -- this should start with logic and options
                                        _pathGuard = [],
                                        _retVar = "",
                                        _varLab = Map.insert "A" 0 Map.empty,
@@ -61,8 +61,25 @@ startState skst maxunroll = SymbState {_counter = 0,
 
 type Symb = State SymbState
 
+class Symbolic t v | t -> v where
+  symb :: t -> Symb v
+
+-- write a bv32 function... is this right?
+bv32 :: Int -> Expr
+bv32 n = if n >= 0
+          then
+            bv n 32 -- "(_ bv" ++ (show n) ++ " 32)".. _ is an identifier?
+          else
+            bvneg (bv32 (-n))
+
+-- syntactic sugar
+declareConst :: Name -> Type -> Command
+declareConst n t = CmdDeclareFun n [] t
+
+
+
 -- push the pathGuard by 1
-pushGuard :: Z3 -> Symb ()
+pushGuard :: Expr -> Symb ()
 pushGuard z = do g <- use pathGuard
                  pathGuard .= z : g
                  return ()
@@ -74,26 +91,24 @@ popGuard = do g <- use pathGuard
               return ()
 
 -- what??
-getGuard :: Symb Z3
+getGuard :: Symb Script
 getGuard = do g <- use pathGuard
               return $ foldr and (ZVar "true") g
 
--- list of Commands? (eg Script) rather than Z3
-
 
 -- append to the smt list inside of SymbState. This should be a Command stack
-addZ3 :: Z3 -> Symb ()
-addZ3 e = do z <- use smt
+addCmd :: Command -> Symb ()
+addCmd e = do z <- use smt
              let z' = z ++ [e]
              smt .= z'
              return ()
 
 -- given a type, make a temporary variable. increment counter. add to stack.
-tempVar :: ZType -> Symb String
+tempVar :: Type -> Symb String
 tempVar t = do n <- use counter
                counter += 1
                let v = "var" ++ (show n)
-               addZ3 $ declareConst v t
+               addCmd $ declareConst v t
                return v
 
 
@@ -106,7 +121,7 @@ isSketchVar n = do vs <- use (sketchState . sketchVars)
 
 
 
--- variable name? what is v and k?
+-- variable name version
 vName v k = v ++ "_" ++ (show k)
 
 --
@@ -123,22 +138,22 @@ getVar var = do
 
 -- looks like this takes a name and type and overwrites some variable in varLab, then declares in
 -- the Command stack
-overwriteVar :: String -> ZType -> Symb ()
+overwriteVar :: String -> Type -> Symb ()
 overwriteVar n t = do
     m <- use varLab
     let k' = case Map.lookup n m of
                Nothing -> 0
                Just k -> k+1
     varLab .= Map.insert n k' m
-    addZ3 $ declareConst (n ++ "_" ++ (show k')) t
+    addCmd $ declareConst (vName n k') t
     return ()
 
 
 -- takes an expr and asserts it in the Command stack?
 zAssert :: Expr -> Symb ()
-zAssert e = addZ3 $ CmdAssert e
+zAssert e = addCmd $ CmdAssert e
 
--- fuck, I don't know
+-- put this stuff into the Symbolic class...
 symbMethodDecl :: MemberDecl -> Symb ()
 symbMethodDecl (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) = do mapM_ symbFormalParam args
                                                                       symbBlock b
@@ -146,7 +161,7 @@ symbMethodDecl (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) = do mapM_ symb
 
 -- er.. given a formal parameter, adds a constant to the stack?
 symbFormalParam :: FormalParam -> Symb ()
-symbFormalParam (FormalParam _ t _ (VarId (Ident n))) = do addZ3 $ declareConst n (symbType t)
+symbFormalParam (FormalParam _ t _ (VarId (Ident n))) = do addCmd $ declareConst n (symbType t)
                                                            return ()
 
 -- mass block statements
@@ -222,7 +237,7 @@ symbStmt s = fail (prettyPrint s)
 -- overwrite and assert it's equal to 0?
 symbVarDecl :: Type -> VarDecl -> Symb ()
 symbVarDecl t (VarDecl (VarId (Ident n)) vinit) = do
-    overwriteVar n tInt
+    overwriteVar n tInt -- why isn't this t?
     n' <- getVar n
     zAssert $ ((ZVar n') === (BV32 0))
 
@@ -236,7 +251,7 @@ symbExp (ArrayAccess (ArrayIndex arr n)) = do
     return v
 
     where
-    select :: String -> String -> String -> Z3
+    select :: String -> String -> String -> Expr
     select arr n upper =
         ite (and (bvsge (ZVar n) (symbLit $ Int 0)) (bvslt (ZVar n) (ZVar upper)))
              (select (ZVar arr) (ZVar n))
@@ -276,6 +291,7 @@ symbAssign n e = do ev <- symbExp e
                     zAssert $ (ZVar v) === (ZVar ev)
                     return v
 
+-- is === correct? also, not bv versions of And and Or
 opName :: Op -> String
 opName Mult = bvmul
 opName Add = bvadd
@@ -287,7 +303,7 @@ opName GThan = bvsgt
 opName CAnd = and
 opName COr = or
 
-opType :: Op -> ZType
+opType :: Op -> Type
 opType Mult = tInt
 opType Add = tInt
 opType Sub = tInt
@@ -298,16 +314,20 @@ opType GThan = tBool
 opType CAnd = tBool
 opType COr = tBool
 
-symbType :: Type -> ZType
+
+-- Uh oh! That's bad; look up what PrimType and RefType are. Collision? Java..
+symbType :: Type? -> Type
 symbType (PrimType IntT) = tInt
 symbType (PrimType BooleanT) = tBool
 symbType (RefType (ArrayType t)) = tArray tInt (symbType t)
 
-litType :: Literal -> ZType
+-- Java literals I assume
+litType :: Literal -> Type
 litType (Int _) = tInt
 litType (Boolean _) = tBool
 
-symbLit :: Literal -> Z3
+
+symbLit :: Literal -> Expr
 symbLit (Int n) = BV32 $ fromInteger n
 symbLit (Boolean True) = ZVar "true"
 symbLit (Boolean False) = ZVar "false"
@@ -333,12 +353,9 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   where
     expInputs = map (Lit . Int . toInteger) (tail inputs)
 
--- syntactic sugar
-declareConst :: Name -> Type -> Command
-declareConst n t = CmdDeclareFun n [] t
 
 declare :: String -> Symb ()
-declare n = do addZ3 $ declareConst n tInt
+declare n = do addCmd $ declareConst n tInt
                return ()
 
 declareSketchVars :: Symb ()
@@ -352,7 +369,7 @@ evalSketch dec skst tests maxunroll = concat $ map pretty $ (execState runTests 
     runTests :: Symb ()
     runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests
-                  addZ3 CmdCheckSat
-                  addZ3 GetModel
+                  addCmd CmdCheckSat
+                  addCmd GetModel
                   return ()
 
