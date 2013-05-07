@@ -19,6 +19,8 @@ executable quixey-challenger
   Extensions:
     FlexibleContexts
     TemplateHaskell
+    MultiParamTypeClasses
+    FunctionalDependencies
 
   Main-Is: Main.hs
 
@@ -45,4 +47,5 @@ executable quixey-challenger
                        split <= 0.2.1.1, 
                        process <= 1.1.0.2,
                        configurator ==0.2.0.2,
-                       lens ==3.9.0.2
+                       lens ==3.9.0.2,
+                       smtLib ==1.0.3
