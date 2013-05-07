@@ -20,27 +20,6 @@ import Debug.Trace
 
 import Sketch
 
-data ZType = ZInt | ZBool | ZArray ZType ZType
-             deriving (Show, Eq)
-            -- *S.tInt | *S.tBool | *S.tArray x y (takes two Type parameters) | tVar?
-
-data Z3 = Assert Z3 -- *Command, CmdAssert
-        | DeclareConst String ZType -- *Command, need to convert to DeclareFun
-        | ZIte Z3 Z3 Z3 -- *ite, Expr
-        | ZVar String -- identifier? Name?
-        | BV32 Int -- bv :: Integer -> Integer -> Expr, bv num w, need a function to check if use bvneg
-        | ZBinOp String Z3 Z3 -- * lots of stuff, bv or not?
-        | ZSelect Z3 Z3 -- *select :: Expr -> Expr -> Expr
-        | ZStore Z3 Z3 Z3 -- *store :: Expr -> Expr -> Expr -> Expr
-        | ZNot Z3 -- *not (I think, or bvnot?)
-        | ConstArray Int -- Array indextype valuetype, so how do you get a constant array?
-        | CheckSat -- *Command (needs produce-models option to be true, before set-logic)
-        | GetModel -- Probably Command. (get-value (x y z blah))
-        deriving (Show, Eq)
-
--- looks like it's Type and Expr (Function and Name, but functions are Expr)
--- We should just work at the Commmand level?
--- Qualify Java
 
 type SmtScript = Smt.Script
 type SmtCommand = Smt.Command
