@@ -30,7 +30,7 @@ type SmtName = Smt.Name
 data SymbState = SymbState { _counter :: Int,
                              _smt :: [SmtCommand],
                              _pathGuard :: [SmtExpr],
-                             _retVar :: String,
+                             _retVar :: SmtName,
                              _varLab :: Map.Map SmtName Int, -- SSA; Single Static Assignment
                              _sketchState :: SketchState,
                              _unrollDepth :: Int,
@@ -43,7 +43,7 @@ startState :: SketchState -> Int -> SymbState
 startState skst maxunroll = SymbState {_counter = 0,
                                        _smt = [], -- this should start with logic and options
                                        _pathGuard = [],
-                                       _retVar = "",
+                                       _retVar = Smt.N "",
                                        _varLab = Map.insert (Smt.N "A") 0 Map.empty,
                                        _sketchState = skst,
                                        _unrollDepth = 0,
@@ -109,7 +109,7 @@ instance Symbolic Stmt () where
   symb (StmtBlock b) = symb b
   symb Empty = return ()
   symb (ExpStmt e) = do symb e
-                            return ()
+                        return ()
   symb (Return (Just e)) = do v <- symb e
                               g <- getGuard
                               r <- use retVar
@@ -123,14 +123,14 @@ instance Symbolic Stmt () where
       v2 <- symb s1
       popGuard
       m2 <- use varLab
-      pushGuard $ not (smtVar v1)
+      pushGuard $ Smt.not (smtVar v1)
       v3 <- symb s2
       popGuard
       m3 <- use varLab
       g <- getGuard
-      let g1 = and g (smtVar v1)
-      let g2 = and g (not (smtVar v1))
-      mapM ((flip overwriteVar) Smt.tInt . fst) (filter ((/='A') . head . fst) (Map.toList m1))
+      let g1 = Smt.and g (smtVar v1)
+      let g2 = Smt.and g (Smt.not (smtVar v1))
+      mapM ((flip overwriteVar) Smt.tInt . fst) (filter ((/='A') . unwraphead . unwrapfst) (Map.toList m1))
       m4 <- use varLab
       mapM (\(x,n) -> addAssert $ g1 Smt.==> ((mVar x m4) Smt.=== (mVar x m2)))
            (Map.toList m1)
@@ -139,6 +139,8 @@ instance Symbolic Stmt () where
       return ()
     where
      lookup x m = fromJust $ Map.lookup x m
+     unwrapfst (a,b) = a
+     unwraphead (Smt.N n) = head n
 
      mVar x m = smtVar $ vName x (lookup x m)
      branch2Var x m1 m2 m3 = if lookup x m3 > lookup x m2
@@ -152,7 +154,7 @@ instance Symbolic Stmt () where
          if d >= m
           then
            do v <- symb e
-              addAssert $ not (smtVar v)
+              addAssert $ Smt.not (smtVar v)
               return ()
           else
            do unrollDepth +=1
@@ -161,21 +163,21 @@ instance Symbolic Stmt () where
               return ()
   symb s = fail (prettyPrint s)
 
-instance Symbolic Exp String where
+instance Symbolic Exp SmtName where
 -- symbExp :: Exp -> Symb SmtName
   symb (ArrayAccess (ArrayIndex arr n)) = do
-      arr' <- symb arr
-      n' <- symb n
+      arr' <- symb arr -- Exp
+      n' <- symb n -- Exp
       v <- tempVar Smt.tInt
       upper_bound <- getVar (Smt.N "length")
       addAssert $ ((smtVar v) Smt.=== (select arr' n' upper_bound))
       return v
 
       where
-      select :: String -> String -> String -> Smt.Expr
+      select :: SmtName -> SmtName -> SmtName -> Smt.Expr
       select arr n upper =
           Smt.ite (Smt.and (Smt.bvsge (smtVar n) (symbLit $ Int 0)) (Smt.bvslt (smtVar n) (smtVar upper)))
-               (select (smtVar arr) (smtVar n))
+               (Smt.select (smtVar arr) (smtVar n))
                (symbLit $ Int 123)
 
   symb (Assign (NameLhs (Name [Ident v])) AddA e) = symb $ Assign (NameLhs (Name [Ident v])) EqualA (BinOp e Add (ExpName (Name [Ident v])))
@@ -201,11 +203,11 @@ instance Symbolic Exp String where
                             v <- tempVar Smt.tInt
                             addAssert $ (smtVar v) Smt.=== ((opName o) (smtVar v1) (smtVar v2))
                             return v
-  symb (ExpName (Name [Ident n])) = getVar n
-  symb (ExpName (Name xs)) = getVar "length"
+  symb (ExpName (Name [Ident n])) = getVar (Smt.N n)
+  symb (ExpName (Name xs)) = getVar (Smt.N "length")
   symb e = fail ("BAD: " ++ show e)
 
-symbAssign :: String -> Exp -> Symb String
+symbAssign :: String -> Exp -> Symb SmtName
 symbAssign n e = do ev <- symb e
                     overwriteVar (Smt.N n) Smt.tInt
                     v <- getVar (Smt.N n)
@@ -336,7 +338,7 @@ litType (Boolean _) = Smt.tBool
 
 -- convert literal to expr?
 symbLit :: Literal -> SmtExpr
-symbLit (Int n) = bv32 $ fromInteger n
+symbLit (Int n) = bv32 $ toInteger n
 symbLit (Boolean True) = Smt.true
 symbLit (Boolean False) = Smt.false
 
@@ -344,14 +346,14 @@ symbTest :: MemberDecl -> [Int] -> Int -> Symb ()
 symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   overwriteVar (Smt.N "retVar") Smt.tInt
   r <- getVar (Smt.N "retVar")
-  addAssert $ (smtVar r) Smt.=== (bv32 output)
+  addAssert $ (smtVar r) Smt.=== (bv32 $ toInteger output)
 
-  overwriteVar "A" (Smt.tArray Smt.tInt Smt.tInt)
-  arr <- getVar "A"
+  overwriteVar (Smt.N "A") (Smt.tArray Smt.tInt Smt.tInt)
+  arr <- getVar (Smt.N "A")
 
-  overwriteVar "length" Smt.tInt
-  len <- getVar "length"
-  addAssert $ (smtVar len) Smt.=== (bv32 $ head $ inputs)
+  overwriteVar (Smt.N "length") Smt.tInt
+  len <- getVar (Smt.N "length")
+  addAssert $ (smtVar len) Smt.=== (bv32 $ toInteger $ head $ inputs)
 
   retVar .= r
   mapM_ (\(e,i) -> do
