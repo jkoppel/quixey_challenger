@@ -63,6 +63,7 @@ test_idea st idea q cfg = do
         z3in = evalSketch idea st tests maxunroll
     putStrLn $ prettyPrint q
     writeFile "z3.smt2" z3in
+    appendFile "z3.smt2" "(get-model)"
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     let (head:model) = lines out
     if head == "unsat"
