@@ -21,6 +21,9 @@ import Debug.Trace
 import Sketch
 
 
+-- get rid of unnecessary return ()
+-- switch back varLab to use String
+
 type SmtScript = Smt.Script
 type SmtCommand = Smt.Command
 type SmtExpr = Smt.Expr
@@ -44,7 +47,7 @@ startState skst maxunroll = SymbState {_counter = 0,
                                        _smt = [], -- this should start with logic and options
                                        _pathGuard = [],
                                        _retVar = Smt.N "",
-                                       _varLab = Map.insert (Smt.N "A") 0 Map.empty,
+                                       _varLab = Map.insert (Smt.N "A") 0 Map.empty, -- prob not needed
                                        _sketchState = skst,
                                        _unrollDepth = 0,
                                        _maxUnrollDepth = maxunroll}
@@ -81,12 +84,10 @@ instance Symbolic MemberDecl () where
 --symbMethodDecl :: MemberDecl -> Symb ()
   symb (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) = do mapM_ symb args
                                                               symb b
-                                                              return ()
 
 instance Symbolic FormalParam () where
 --symbFormalParam :: FormalParam -> Symb ()
-  symb (FormalParam _ t _ (VarId (Ident n))) = do addCmd $ declareConst (Smt.N n) (symbType t)
-                                                  return ()
+  symb (FormalParam _ t _ (VarId (Ident n))) = addCmd $ declareConst (Smt.N n) (symbType t)
 
 instance Symbolic Block () where
 -- symbBlock :: Block -> Symb ()
@@ -114,7 +115,6 @@ instance Symbolic Stmt () where
                               g <- getGuard
                               r <- use retVar
                               addAssert $ g Smt.==> ((smtVar r) Smt.=== (smtVar v))
-                              return ()
   symb (IfThen e s) = symb $ IfThenElse e s Empty
   symb (IfThenElse e s1 s2) = do
       v1 <- symb e
@@ -130,7 +130,7 @@ instance Symbolic Stmt () where
       g <- getGuard
       let g1 = Smt.and g (smtVar v1)
       let g2 = Smt.and g (Smt.not (smtVar v1))
-      mapM ((flip overwriteVar) Smt.tInt . fst) (filter ((/='A') . unwraphead . unwrapfst) (Map.toList m1))
+      mapM ((flip overwriteVar) Smt.tInt . fst) (filter ((/='A') . unwraphead . fst) (Map.toList m1)) -- gonna get rid of the filter probably
       m4 <- use varLab
       mapM (\(x,n) -> addAssert $ g1 Smt.==> ((mVar x m4) Smt.=== (mVar x m2)))
            (Map.toList m1)
@@ -139,7 +139,6 @@ instance Symbolic Stmt () where
       return ()
     where
      lookup x m = fromJust $ Map.lookup x m
-     unwrapfst (a,b) = a
      unwraphead (Smt.N n) = head n
 
      mVar x m = smtVar $ vName x (lookup x m)
@@ -155,12 +154,10 @@ instance Symbolic Stmt () where
           then
            do v <- symb e
               addAssert $ Smt.not (smtVar v)
-              return ()
           else
-           do unrollDepth +=1
+           do unrollDepth += 1
               symb $ IfThenElse e (StmtBlock $ Block [BlockStmt s, BlockStmt $ While e s]) Empty
               unrollDepth -= 1
-              return ()
   symb s = fail (prettyPrint s)
 
 instance Symbolic Exp SmtName where
@@ -369,12 +366,12 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
 
 {- Final Form! -}
 evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> Int -> String
-evalSketch dec skst tests maxunroll = concat $ map Smt.pp $ (execState runTests (startState skst maxunroll)) ^. smt
+evalSketch dec skst tests maxunroll = concat $ map show $ map Smt.pp $ (execState runTests (startState skst maxunroll)) ^. smt -- I bet that we can just remove the concat
  where
     runTests :: Symb ()
     runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests
                   addCmd Smt.CmdCheckSat
-                  --addCmd Smt.GetModel
+                  --addCmd Smt.GetModel just add this outside!
                   return ()
 
