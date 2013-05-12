@@ -366,7 +366,7 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
 
 {- Final Form! -}
 evalSketch :: MemberDecl -> SketchState -> [([Int], Int)] -> Int -> String
-evalSketch dec skst tests maxunroll = concat $ map show $ map Smt.pp $ (execState runTests (startState skst maxunroll)) ^. smt -- I bet that we can just remove the concat
+evalSketch dec skst tests maxunroll = show $ Smt.pp $ Smt.Script $ (execState runTests (startState skst maxunroll)) ^. smt -- I bet that we can just remove the concat
  where
     runTests :: Symb ()
     runTests = do declareSketchVars
