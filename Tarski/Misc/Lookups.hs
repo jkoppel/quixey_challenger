@@ -7,6 +7,9 @@ import qualified SMTLib2.Int as Smt
 import qualified SMTLib2.BitVector as Smt
 import qualified SMTLib2.Array as Smt
 
+tBV :: Smt.Type
+tBV = Smt.tBitVec 32
+
 {- Op Lookups -}
 opName :: Op -> (Smt.Expr -> Smt.Expr -> Smt.Expr)
 opName Mult = Smt.bvmul
@@ -21,10 +24,10 @@ opName COr = Smt.or
 
 {- Type Lookups? -}
 opType :: Op -> Smt.Type
-opType Mult = Smt.tInt
-opType Add = Smt.tInt
-opType Sub = Smt.tInt
-opType Div = Smt.tInt
+opType Mult = tBV
+opType Add = tBV
+opType Sub = tBV
+opType Div = tBV
 opType Equal = Smt.tBool
 opType LThan = Smt.tBool
 opType GThan = Smt.tBool
@@ -32,11 +35,11 @@ opType CAnd = Smt.tBool
 opType COr = Smt.tBool
 
 symbType :: Type -> Smt.Type
-symbType (PrimType IntT) = Smt.tInt
+symbType (PrimType IntT) = tBV
 symbType (PrimType BooleanT) = Smt.tBool
-symbType (RefType (ArrayType t)) = Smt.tArray Smt.tInt (symbType t)
+symbType (RefType (ArrayType t)) = Smt.tArray tBV (symbType t)
 
 -- Java literals I assume
 litType :: Literal -> Smt.Type
-litType (Int _) = Smt.tInt
+litType (Int _) = tBV
 litType (Boolean _) = Smt.tBool

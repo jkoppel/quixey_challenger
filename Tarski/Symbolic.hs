@@ -39,6 +39,9 @@ bv32 n = if n >= 0
 smtVar :: Smt.Name -> Smt.Expr
 smtVar n = Smt.App (Smt.I n []) Nothing []
 
+tBV :: Smt.Type
+tBV = Smt.tBitVec 32
+
 
 {- Symbolic -}
 class Symbolic t v | t -> v where
@@ -94,7 +97,7 @@ instance Symbolic Stmt () where
       g <- getGuard
       let g1 = Smt.and g (smtVar v1)
       let g2 = Smt.and g (Smt.not (smtVar v1))
-      mapM_ ((flip overwriteVar) (Smt.tBitVec 32) . fst) (filter ((/='A') . head . fst) (Map.toList m1)) -- gonna get rid of the filter probably
+      mapM_ ((flip overwriteVar) tBV . fst) (filter ((/='A') . head . fst) (Map.toList m1)) -- gonna get rid of the filter probably
       m4 <- use varLab
       mapM_ (\(x,n) -> addAssert $ g1 Smt.==> ((mVar x m4) Smt.=== (mVar x m2)))
            (Map.toList m1)
@@ -128,7 +131,7 @@ instance Symbolic Exp Smt.Name where
   symb (ArrayAccess (ArrayIndex arr n)) = do
       arr' <- symb arr -- Exp
       n' <- symb n -- Exp
-      v <- tempVar (Smt.tBitVec 32) -- ??
+      v <- tempVar tBV
       upper_bound <- getVar "length"
       addAssert $ ((smtVar v) Smt.=== (select arr' n' upper_bound))
       return v
@@ -149,7 +152,7 @@ instance Symbolic Exp Smt.Name where
       v1 <- symb e1
       v2 <- symb e2
       v3 <- symb e3
-      v <- tempVar (Smt.tBitVec 32)
+      v <- tempVar tBV
       addAssert $ (smtVar v) Smt.=== (Smt.ite (smtVar v1) (smtVar v2) (smtVar v3))
       return v
   symb (BinOp e1 o e2) | opType o == Smt.tBool = do
@@ -160,7 +163,7 @@ instance Symbolic Exp Smt.Name where
       return v
   symb (BinOp e1 o e2) = do v1 <- symb e1
                             v2 <- symb e2
-                            v <- tempVar (Smt.tBitVec 32)
+                            v <- tempVar tBV
                             addAssert $ (smtVar v) Smt.=== ((opName o) (smtVar v1) (smtVar v2))
                             return v
   symb (ExpName (Name [Ident n])) = getVar n
@@ -169,7 +172,7 @@ instance Symbolic Exp Smt.Name where
 
 symbAssign :: String -> Exp -> Symb Smt.Name
 symbAssign n e = do ev <- symb e
-                    overwriteVar n (Smt.tBitVec 32)
+                    overwriteVar n tBV
                     v <- getVar n
                     addAssert $ (smtVar v) Smt.=== (smtVar ev)
                     return v
@@ -181,14 +184,14 @@ symbLit (Boolean False) = Smt.false
 
 symbTest :: MemberDecl -> [Int] -> Int -> Symb ()
 symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
-  overwriteVar "retVar" (Smt.tBitVec 32)
+  overwriteVar "retVar" tBV
   r <- getVar "retVar"
   addAssert $ (smtVar r) Smt.=== (bv32 $ toInteger output)
 
-  overwriteVar "A" (Smt.tArray (Smt.tBitVec 32) (Smt.tBitVec 32))
+  overwriteVar "A" (Smt.tArray tBV tBV)
   arr <- getVar "A"
 
-  overwriteVar "length" (Smt.tBitVec 32)
+  overwriteVar "length" tBV
   len <- getVar "length"
   addAssert $ (smtVar len) Smt.=== (bv32 $ toInteger $ head $ inputs)
 
