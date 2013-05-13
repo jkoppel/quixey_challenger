@@ -2,7 +2,7 @@ module Tarski.State.Manip where
 
 import Control.Monad
 import Control.Monad.State
-import Control.Lens ( makeLenses, (^.), (.=), use, (+=), (-=) )
+import Control.Lens ( (.=), use )
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set

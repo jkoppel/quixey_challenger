@@ -25,7 +25,7 @@ import Tarski.Symbolic
 import Tarski.Sketch
 import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
 
-type Tests = [([Int],Int)] -- modify this? more general. can't be configurable as types are done
+--type Tests = [([Int],Int)] -- modify this? more general. can't be configurable as types are done
 
 -- deals with configuration file
 main :: IO ()

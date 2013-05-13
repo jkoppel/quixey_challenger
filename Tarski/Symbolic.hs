@@ -16,13 +16,11 @@ import qualified SMTLib2.Int as Smt
 import qualified SMTLib2.BitVector as Smt
 import qualified SMTLib2.Array as Smt
 
-import Debug.Trace
-
-import Tarski.Sketch (sketchVars, SketchState)
+import Tarski.Sketch (SketchState)
 import Tarski.Misc.Lookups (opName, opType, symbType, litType)
-import Tarski.State.Variable (tempVar, isSketchVar, vName, getVar, overwriteVar)
+import Tarski.State.Variable (tempVar, vName, getVar, overwriteVar)
 import Tarski.State.Manip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
-import Tarski.State.SymbState (SymbState, Symb, pathGuard, smt, sketchState, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
+import Tarski.State.SymbState (Symb, smt, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
 
 
 {- Misc Functions -}

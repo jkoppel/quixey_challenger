@@ -6,10 +6,6 @@ import Control.Lens ( makeLenses )
 import Data.Map as Map
 
 import qualified SMTLib2 as Smt
-import qualified SMTLib2.Core as Smt
-import qualified SMTLib2.Int as Smt
-import qualified SMTLib2.BitVector as Smt
-import qualified SMTLib2.Array as Smt
 
 import Tarski.Sketch
 

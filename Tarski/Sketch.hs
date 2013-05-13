@@ -6,7 +6,7 @@ import Data.Monoid
 
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Lens ( makeLenses, (^.), (+=), (.=), use )
+import Control.Lens ( makeLenses, (+=), (.=), use )
 
 import Language.Java.Parser
 import Language.Java.Syntax
@@ -27,6 +27,7 @@ makeLenses ''SketchState
 
 type Sketch = State SketchState
 
+startSketchState :: SketchState
 startSketchState = SketchState  {
                                 _sketchVars = Set.empty,
                                 _nVars = 0
@@ -66,9 +67,9 @@ alternatives [] = return $ Lit $ Int $ 0
 alternatives [x] = x
 alternatives (x:xs) = do
     v <- newSketchVar
-    fst <- x
+    frst <- x
     rest <- alternatives xs
-    return $ Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int 0)) fst rest
+    return $ Cond (BinOp (ExpName $ Name [Ident v]) Equal (Lit $ Int 0)) frst rest
 
 sketchVar :: Map.Map Ident a -> Sketch Exp
 sketchVar m = alternatives (map (\v -> return $ ExpName $ Name [v]) (map fst $ Map.toList m))

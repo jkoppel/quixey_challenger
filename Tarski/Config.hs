@@ -12,7 +12,7 @@ import Data.Text ( pack )
 
 import Control.Lens ( makeLenses )
 
-import Data.Configurator (load, Worth(..), lookupDefault, require)
+import Data.Configurator (load, Worth(..), require)
 
 type Tests = [([Int],Int)]
 
