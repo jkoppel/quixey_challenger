@@ -22,18 +22,12 @@ import Sketch
 
 
 -- get rid of unnecessary return ()
--- switch back varLab to use String
 
-type SmtScript = Smt.Script
-type SmtCommand = Smt.Command
-type SmtExpr = Smt.Expr
-type SmtType = Smt.Type
-type SmtName = Smt.Name
 
 data SymbState = SymbState { _counter :: Int,
-                             _smt :: [SmtCommand],
-                             _pathGuard :: [SmtExpr],
-                             _retVar :: SmtName,
+                             _smt :: [Smt.Command],
+                             _pathGuard :: [Smt.Expr],
+                             _retVar :: Smt.Name,
                              _varLab :: Map.Map String Int, -- SSA; Single Static Assignment
                              _sketchState :: SketchState,
                              _unrollDepth :: Int,
@@ -53,27 +47,6 @@ startState skst maxunroll = SymbState {_counter = 0,
                                        _maxUnrollDepth = maxunroll}
 
 type Symb = State SymbState
-
-
-
-
-
-{- Misc Functions -}
--- pseudoconstructor. is this right?
-bv32 :: Integer -> SmtExpr
-bv32 n = if n >= 0
-          then
-            Smt.bv n 32 -- "(_ bv" ++ (show n) ++ " 32)".. _ is an identifier?
-          else
-            Smt.bvneg (bv32 (-n))
-
--- syntactic sugar
-declareConst :: SmtName -> SmtType -> SmtCommand
-declareConst n t = Smt.CmdDeclareFun n [] t
-
--- turn names into expressions!
-smtVar :: SmtName -> SmtExpr
-smtVar n = Smt.App (Smt.I n []) Nothing []
 
 
 {- Symbolic -}
@@ -159,8 +132,8 @@ instance Symbolic Stmt () where
               unrollDepth -= 1
   symb s = fail (prettyPrint s)
 
-instance Symbolic Exp SmtName where
--- symbExp :: Exp -> Symb SmtName
+instance Symbolic Exp Smt.Name where
+-- symbExp :: Exp -> Symb Smt.Name
   symb (ArrayAccess (ArrayIndex arr n)) = do
       arr' <- symb arr -- Exp
       n' <- symb n -- Exp
@@ -170,7 +143,7 @@ instance Symbolic Exp SmtName where
       return v
 
       where
-          select :: SmtName -> SmtName -> SmtName -> Smt.Expr
+          select :: Smt.Name -> SmtName -> SmtName -> Smt.Expr
           select arr n upper =
               Smt.ite (Smt.and (Smt.bvsge (smtVar n) (symbLit $ Int 0)) (Smt.bvslt (smtVar n) (smtVar upper)))
                    (Smt.select (smtVar arr) (smtVar n))
@@ -203,7 +176,7 @@ instance Symbolic Exp SmtName where
   symb (ExpName (Name xs)) = getVar "length"
   symb e = fail ("BAD: " ++ show e)
 
-symbAssign :: String -> Exp -> Symb SmtName
+symbAssign :: String -> Exp -> Symb Smt.Name
 symbAssign n e = do ev <- symb e
                     overwriteVar n Smt.tInt
                     v <- getVar n
@@ -211,8 +184,28 @@ symbAssign n e = do ev <- symb e
                     return v
 
 
+
+{- Misc Functions -}
+-- pseudoconstructor
+bv32 :: Integer -> Smt.Expr
+bv32 n = if n >= 0
+          then
+            Smt.bv n 32 -- "(_ bv" ++ (show n) ++ " 32)".. _ is an identifier?
+          else
+            Smt.bvneg (bv32 (-n))
+
+-- syntactic sugar
+declareConst :: Smt.Name -> Smt.Type -> Smt.Command
+declareConst n t = Smt.CmdDeclareFun n [] t
+
+-- turn names into expressions!
+smtVar :: Smt.Name -> Smt.Expr
+smtVar n = Smt.App (Smt.I n []) Nothing []
+
+
+
 {- Path Guards -}
-pushGuard :: SmtExpr -> Symb ()
+pushGuard :: Smt.Expr -> Symb ()
 pushGuard z = do g <- use pathGuard
                  pathGuard .= z : g
                  return ()
@@ -222,21 +215,21 @@ popGuard = do g <- use pathGuard
               pathGuard .= tail g
               return ()
 
-getGuard :: Symb SmtExpr
+getGuard :: Symb Smt.Expr
 getGuard = do g <- use pathGuard
               return $ foldr Smt.and Smt.true g
 
 
 {- Commands -}
 -- append to the smt list inside of SymbState. This should be a Command stack
-addCmd :: SmtCommand -> Symb ()
+addCmd :: Smt.Command -> Symb ()
 addCmd e = do z <- use smt
               let z' = z ++ [e]
               smt .= z'
               return ()
 
 -- takes an expr and asserts it in the Command stack?
-addAssert :: SmtExpr -> Symb ()
+addAssert :: Smt.Expr -> Symb ()
 addAssert e = addCmd $ Smt.CmdAssert e
 
 -- declare a constant
@@ -253,7 +246,7 @@ declareSketchVars = do skvs <- use (sketchState . sketchVars)
 
 {- Variable Operations -}
 -- given a type, make a temporary variable. increment counter. add to stack.
-tempVar :: SmtType -> Symb SmtName
+tempVar :: Smt.Type -> Symb Smt.Name
 tempVar t = do n <- use counter
                counter += 1
                let v = Smt.N ("var" ++ (show n))
@@ -266,12 +259,12 @@ isSketchVar n = do vs <- use (sketchState . sketchVars)
                    return $ Set.member n vs
 
 -- variable name version
--- SmtName?
+-- Smt.Name?
 vName :: String -> Int -> String
 vName v k = v ++ "_" ++ (show k)
 
 -- finds a variable and returns it
-getVar :: String -> Symb SmtName
+getVar :: String -> Symb Smt.Name
 getVar var = do
             m <- use varLab
             b <- isSketchVar var
@@ -296,7 +289,7 @@ overwriteVar n t = do
 
 
 {- Op Lookups -}
-opName :: Op -> (SmtExpr -> SmtExpr -> SmtExpr)
+opName :: Op -> (Smt.Expr -> SmtExpr -> SmtExpr)
 opName Mult = Smt.bvmul
 opName Add = Smt.bvadd
 opName Sub = Smt.bvsub
@@ -320,20 +313,20 @@ opType CAnd = Smt.tBool
 opType COr = Smt.tBool
 
 -- Uh oh! That's bad; look up what PrimType and RefType are. Collision? Java..
-symbType :: Type -> SmtType
+symbType :: Type -> Smt.Type
 symbType (PrimType IntT) = Smt.tInt
 symbType (PrimType BooleanT) = Smt.tBool
 symbType (RefType (ArrayType t)) = Smt.tArray Smt.tInt (symbType t)
 
 -- Java literals I assume
-litType :: Literal -> SmtType
+litType :: Literal -> Smt.Type
 litType (Int _) = Smt.tInt
 litType (Boolean _) = Smt.tBool
 
 
 
 -- convert literal to expr?
-symbLit :: Literal -> SmtExpr
+symbLit :: Literal -> Smt.Expr
 symbLit (Int n) = bv32 $ toInteger n
 symbLit (Boolean True) = Smt.true
 symbLit (Boolean False) = Smt.false
@@ -371,6 +364,5 @@ evalSketch dec skst tests maxunroll = show $ Smt.pp $ Smt.Script $ (execState ru
     runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests
                   addCmd Smt.CmdCheckSat
-                  --addCmd Smt.GetModel just add this outside!
                   return ()
 
