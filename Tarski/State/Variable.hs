@@ -16,7 +16,7 @@ import qualified SMTLib2.Array as Smt
 
 import Tarski.Sketch (sketchVars)
 import Tarski.State.SymbState (SymbState, Symb, pathGuard, smt, sketchState, counter, varLab)
-import Tarski.State.StateManip (addDeclareConst)
+import Tarski.State.Manip (addDeclareConst)
 
 {- Variable Operations -}
 -- given a type, make a temporary variable. increment counter. add to stack.

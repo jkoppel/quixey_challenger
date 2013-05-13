@@ -21,7 +21,7 @@ import Debug.Trace
 import Tarski.Sketch (sketchVars, SketchState)
 import Tarski.Misc.Lookups (opName, opType, symbType, litType)
 import Tarski.State.Variable (tempVar, isSketchVar, vName, getVar, overwriteVar)
-import Tarski.State.StateManip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
+import Tarski.State.Manip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
 import Tarski.State.SymbState (SymbState, Symb, pathGuard, smt, sketchState, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
 
 

@@ -1,4 +1,4 @@
-module Tarski.State.StateManip where
+module Tarski.State.Manip where
 
 import Control.Monad
 import Control.Monad.State
