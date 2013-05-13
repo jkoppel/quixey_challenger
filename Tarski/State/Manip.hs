@@ -47,7 +47,7 @@ addAssert e = addCmd $ Smt.CmdAssert e
 
 -- declare a constant
 declare :: String -> Symb ()
-declare n = addDeclareConst (Smt.N n) Smt.tInt
+declare n = addDeclareConst (Smt.N n) (Smt.tBitVec 32)
 
 -- declare all the sketch variables in one go
 declareSketchVars :: Symb ()

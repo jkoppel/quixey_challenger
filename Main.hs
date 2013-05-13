@@ -67,8 +67,6 @@ test_idea st idea q cfg = do
     (exit, out, err) <- readProcessWithExitCode "z3" ["z3.smt2"] ""
     let (head:model) = lines out
     writeFile "output.smt2" out
-    mapM_ putStrLn $ (tail model)
-    putStrLn head
     if head == "unsat"
      then return Nothing
      else return $ Just (str_to_map $ tail model)
