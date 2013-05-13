@@ -2,7 +2,7 @@ module Symbolic where
 
 import Control.Monad
 import Control.Monad.State
-import Control.Lens ( makeLenses, (^.), (.=), use, (+=), (-=) )
+import Control.Lens ( (^.), (.=), use, (+=), (-=) )
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -18,32 +18,26 @@ import qualified SMTLib2.Array as Smt
 
 import Debug.Trace
 
-import Sketch
+import Sketch (sketchVars, SketchState)
 import Lookups (opName, opType, symbType, litType)
+import Variable (tempVar, isSketchVar, vName, getVar, overwriteVar)
+import StateManip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
+import SymbState (SymbState, Symb, pathGuard, smt, sketchState, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
 
-data SymbState = SymbState { _counter :: Int,
-                             _smt :: [Smt.Command],
-                             _pathGuard :: [Smt.Expr],
-                             _retVar :: Smt.Name,
-                             _varLab :: Map.Map String Int, -- SSA; Single Static Assignment
-                             _sketchState :: SketchState,
-                             _unrollDepth :: Int,
-                             _maxUnrollDepth :: Int
-                             }
 
-makeLenses ''SymbState
+{- Misc Functions -}
+-- pseudoconstructor
+bv32 :: Integer -> Smt.Expr
+bv32 n = if n >= 0
+          then
+            Smt.bv n 32 -- "(_ bv" ++ (show n) ++ " 32)".. _ is an identifier?
+          else
+            Smt.bvneg (bv32 (-n))
 
-startState :: SketchState -> Int -> SymbState
-startState skst maxunroll = SymbState {_counter = 0,
-                                       _smt = [], -- this should start with logic and options
-                                       _pathGuard = [],
-                                       _retVar = Smt.N "",
-                                       _varLab = Map.insert "A" 0 Map.empty, -- prob not needed
-                                       _sketchState = skst,
-                                       _unrollDepth = 0,
-                                       _maxUnrollDepth = maxunroll}
+-- turn names into expressions!
+smtVar :: Smt.Name -> Smt.Expr
+smtVar n = Smt.App (Smt.I n []) Nothing []
 
-type Symb = State SymbState
 
 
 {- Symbolic -}
@@ -205,108 +199,6 @@ symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
   symb b
   where
     expInputs = map (Lit . Int . toInteger) (tail inputs)
-
-
-{- Misc Functions -}
--- pseudoconstructor
-bv32 :: Integer -> Smt.Expr
-bv32 n = if n >= 0
-          then
-            Smt.bv n 32 -- "(_ bv" ++ (show n) ++ " 32)".. _ is an identifier?
-          else
-            Smt.bvneg (bv32 (-n))
-
--- turn names into expressions!
-smtVar :: Smt.Name -> Smt.Expr
-smtVar n = Smt.App (Smt.I n []) Nothing []
-
-
-
-{- Path Guards -}
-pushGuard :: Smt.Expr -> Symb ()
-pushGuard z = do g <- use pathGuard
-                 pathGuard .= z : g
-
-popGuard :: Symb ()
-popGuard = do g <- use pathGuard
-              pathGuard .= tail g
-
-getGuard :: Symb Smt.Expr
-getGuard = do g <- use pathGuard
-              return $ foldr Smt.and Smt.true g
-
-
-{- Commands -}
--- append to the smt list inside of SymbState. This should be a Command stack
-addCmd :: Smt.Command -> Symb ()
-addCmd e = do z <- use smt
-              let z' = z ++ [e]
-              smt .= z'
-
--- syntactic sugar
-addDeclareConst :: Smt.Name -> Smt.Type -> Symb ()
-addDeclareConst n t = addCmd $ Smt.CmdDeclareFun n [] t
-
--- takes an expr and asserts it in the Command stack?
-addAssert :: Smt.Expr -> Symb ()
-addAssert e = addCmd $ Smt.CmdAssert e
-
--- declare a constant
-declare :: String -> Symb ()
-declare n = addDeclareConst (Smt.N n) Smt.tInt
-
--- declare all the sketch variables in one go
-declareSketchVars :: Symb ()
-declareSketchVars = do skvs <- use (sketchState . sketchVars)
-                       mapM_ declare (Set.toList skvs)
-
-
-{- Variable Operations -}
--- given a type, make a temporary variable. increment counter. add to stack.
-tempVar :: Smt.Type -> Symb Smt.Name
-tempVar t = do n <- use counter
-               counter += 1
-               let v = Smt.N ("var" ++ (show n))
-               addDeclareConst v t
-               return v
-
--- likely fine as is. checks to see if variable name is member of sketch vars
-isSketchVar :: String -> Symb Bool
-isSketchVar n = do vs <- use (sketchState . sketchVars)
-                   return $ Set.member n vs
-
--- variable name version
--- Smt.Name?
-vName :: String -> Int -> String
-vName v k = v ++ "_" ++ (show k)
-
--- finds a variable and returns it
-getVar :: String -> Symb Smt.Name
-getVar var = do
-            m <- use varLab
-            b <- isSketchVar var
-            if b
-             then return $ Smt.N var
-             else case Map.lookup var m of
-                      Nothing -> error ("Looking up undeclared variable: " ++ var)
-                      Just k -> return $ Smt.N $ vName var k
-
--- looks like this takes a name and type and overwrites some variable in varLab, then declares in
--- the Command stack
-overwriteVar :: String -> Smt.Type -> Symb ()
-overwriteVar n t = do
-    m <- use varLab
-    let k' = case Map.lookup n m of
-               Nothing -> 0
-               Just k -> k+1
-    varLab .= Map.insert n k' m
-    addDeclareConst (Smt.N $ vName n k') t
-
-
-
-
-
-
 
 
 

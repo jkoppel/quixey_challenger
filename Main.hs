@@ -20,7 +20,7 @@ import Control.Lens.Getter ( (^.) )
 
 import Language.Java.Syntax
 import Language.Java.Pretty
-import Symbolic hiding (maxUnrollDepth)
+import Symbolic
 import Sketch
 
 import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
