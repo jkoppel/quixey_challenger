@@ -103,13 +103,13 @@ instance Symbolic Stmt () where
       g <- getGuard
       let g1 = Smt.and g (smtVar v1)
       let g2 = Smt.and g (Smt.not (smtVar v1))
-      mapM ((flip overwriteVar) Smt.tInt . fst) (filter ((/='A') . head . fst) (Map.toList m1)) -- gonna get rid of the filter probably
+      mapM_ ((flip overwriteVar) Smt.tInt . fst) (filter ((/='A') . head . fst) (Map.toList m1)) -- gonna get rid of the filter probably
       m4 <- use varLab
-      mapM (\(x,n) -> addAssert $ g1 Smt.==> ((mVar x m4) Smt.=== (mVar x m2)))
+      mapM_ (\(x,n) -> addAssert $ g1 Smt.==> ((mVar x m4) Smt.=== (mVar x m2)))
            (Map.toList m1)
-      mapM (\(x,n) -> addAssert $ g2 Smt.==> ((mVar x m4) Smt.=== (branch2Var x m1 m2 m3)))
+      mapM_ (\(x,n) -> addAssert $ g2 Smt.==> ((mVar x m4) Smt.=== (branch2Var x m1 m2 m3)))
            (Map.toList m1)
-      return ()
+      -- oh god
     where
      lookup x m = fromJust $ Map.lookup x m
 
@@ -143,7 +143,7 @@ instance Symbolic Exp Smt.Name where
       return v
 
       where
-          select :: Smt.Name -> SmtName -> SmtName -> Smt.Expr
+          select :: Smt.Name -> Smt.Name -> Smt.Name -> Smt.Expr
           select arr n upper =
               Smt.ite (Smt.and (Smt.bvsge (smtVar n) (symbLit $ Int 0)) (Smt.bvslt (smtVar n) (smtVar upper)))
                    (Smt.select (smtVar arr) (smtVar n))
@@ -208,12 +208,10 @@ smtVar n = Smt.App (Smt.I n []) Nothing []
 pushGuard :: Smt.Expr -> Symb ()
 pushGuard z = do g <- use pathGuard
                  pathGuard .= z : g
-                 return ()
 
 popGuard :: Symb ()
 popGuard = do g <- use pathGuard
               pathGuard .= tail g
-              return ()
 
 getGuard :: Symb Smt.Expr
 getGuard = do g <- use pathGuard
@@ -226,7 +224,6 @@ addCmd :: Smt.Command -> Symb ()
 addCmd e = do z <- use smt
               let z' = z ++ [e]
               smt .= z'
-              return ()
 
 -- takes an expr and asserts it in the Command stack?
 addAssert :: Smt.Expr -> Symb ()
@@ -234,14 +231,12 @@ addAssert e = addCmd $ Smt.CmdAssert e
 
 -- declare a constant
 declare :: String -> Symb ()
-declare n = do addCmd $ declareConst (Smt.N n) Smt.tInt
-               return ()
+declare n = addCmd $ declareConst (Smt.N n) Smt.tInt
 
 -- declare all the sketch variables in one go
 declareSketchVars :: Symb ()
 declareSketchVars = do skvs <- use (sketchState . sketchVars)
                        mapM_ declare (Set.toList skvs)
-                       return ()
 
 
 {- Variable Operations -}
@@ -284,12 +279,11 @@ overwriteVar n t = do
                Just k -> k+1
     varLab .= Map.insert n k' m
     addCmd $ declareConst (Smt.N $ vName n k') t
-    return ()
 
 
 
 {- Op Lookups -}
-opName :: Op -> (Smt.Expr -> SmtExpr -> SmtExpr)
+opName :: Op -> (Smt.Expr -> Smt.Expr -> Smt.Expr)
 opName Mult = Smt.bvmul
 opName Add = Smt.bvadd
 opName Sub = Smt.bvsub
@@ -364,5 +358,4 @@ evalSketch dec skst tests maxunroll = show $ Smt.pp $ Smt.Script $ (execState ru
     runTests = do declareSketchVars
                   mapM_ (uncurry $ symbTest dec) tests
                   addCmd Smt.CmdCheckSat
-                  return ()
 
