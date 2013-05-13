@@ -19,10 +19,7 @@ import qualified SMTLib2.Array as Smt
 import Debug.Trace
 
 import Sketch
-
-
--- get rid of unnecessary return ()
-
+import Lookups (opName, opType, symbType, litType)
 
 data SymbState = SymbState { _counter :: Int,
                              _smt :: [Smt.Command],
@@ -60,7 +57,7 @@ instance Symbolic MemberDecl () where
 
 instance Symbolic FormalParam () where
 --symbFormalParam :: FormalParam -> Symb ()
-  symb (FormalParam _ t _ (VarId (Ident n))) = addCmd $ declareConst (Smt.N n) (symbType t)
+  symb (FormalParam _ t _ (VarId (Ident n))) = addDeclareConst (Smt.N n) (symbType t)
 
 instance Symbolic Block () where
 -- symbBlock :: Block -> Symb ()
@@ -183,6 +180,31 @@ symbAssign n e = do ev <- symb e
                     addAssert $ (smtVar v) Smt.=== (smtVar ev)
                     return v
 
+symbLit :: Literal -> Smt.Expr
+symbLit (Int n) = bv32 $ toInteger n
+symbLit (Boolean True) = Smt.true
+symbLit (Boolean False) = Smt.false
+
+symbTest :: MemberDecl -> [Int] -> Int -> Symb ()
+symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
+  overwriteVar "retVar" Smt.tInt
+  r <- getVar "retVar"
+  addAssert $ (smtVar r) Smt.=== (bv32 $ toInteger output)
+
+  overwriteVar "A" (Smt.tArray Smt.tInt Smt.tInt)
+  arr <- getVar "A"
+
+  overwriteVar "length" Smt.tInt
+  len <- getVar "length"
+  addAssert $ (smtVar len) Smt.=== (bv32 $ toInteger $ head $ inputs)
+
+  retVar .= r
+  mapM_ (\(e,i) -> do
+    v <- symb e
+    addAssert $ (smtVar v) Smt.=== (Smt.select (smtVar arr) (symbLit $ Int i))) (zip expInputs [0..])
+  symb b
+  where
+    expInputs = map (Lit . Int . toInteger) (tail inputs)
 
 
 {- Misc Functions -}
@@ -193,10 +215,6 @@ bv32 n = if n >= 0
             Smt.bv n 32 -- "(_ bv" ++ (show n) ++ " 32)".. _ is an identifier?
           else
             Smt.bvneg (bv32 (-n))
-
--- syntactic sugar
-declareConst :: Smt.Name -> Smt.Type -> Smt.Command
-declareConst n t = Smt.CmdDeclareFun n [] t
 
 -- turn names into expressions!
 smtVar :: Smt.Name -> Smt.Expr
@@ -225,13 +243,17 @@ addCmd e = do z <- use smt
               let z' = z ++ [e]
               smt .= z'
 
+-- syntactic sugar
+addDeclareConst :: Smt.Name -> Smt.Type -> Symb ()
+addDeclareConst n t = addCmd $ Smt.CmdDeclareFun n [] t
+
 -- takes an expr and asserts it in the Command stack?
 addAssert :: Smt.Expr -> Symb ()
 addAssert e = addCmd $ Smt.CmdAssert e
 
 -- declare a constant
 declare :: String -> Symb ()
-declare n = addCmd $ declareConst (Smt.N n) Smt.tInt
+declare n = addDeclareConst (Smt.N n) Smt.tInt
 
 -- declare all the sketch variables in one go
 declareSketchVars :: Symb ()
@@ -245,7 +267,7 @@ tempVar :: Smt.Type -> Symb Smt.Name
 tempVar t = do n <- use counter
                counter += 1
                let v = Smt.N ("var" ++ (show n))
-               addCmd $ declareConst v t
+               addDeclareConst v t
                return v
 
 -- likely fine as is. checks to see if variable name is member of sketch vars
@@ -278,73 +300,13 @@ overwriteVar n t = do
                Nothing -> 0
                Just k -> k+1
     varLab .= Map.insert n k' m
-    addCmd $ declareConst (Smt.N $ vName n k') t
+    addDeclareConst (Smt.N $ vName n k') t
 
 
 
-{- Op Lookups -}
-opName :: Op -> (Smt.Expr -> Smt.Expr -> Smt.Expr)
-opName Mult = Smt.bvmul
-opName Add = Smt.bvadd
-opName Sub = Smt.bvsub
-opName Div = Smt.bvsdiv
-opName Equal = (Smt.===)
-opName LThan = Smt.bvslt
-opName GThan = Smt.bvsgt
-opName CAnd = Smt.and
-opName COr = Smt.or
-
-{- Type Lookups? -}
-opType :: Op -> Smt.Type
-opType Mult = Smt.tInt
-opType Add = Smt.tInt
-opType Sub = Smt.tInt
-opType Div = Smt.tInt
-opType Equal = Smt.tBool
-opType LThan = Smt.tBool
-opType GThan = Smt.tBool
-opType CAnd = Smt.tBool
-opType COr = Smt.tBool
-
--- Uh oh! That's bad; look up what PrimType and RefType are. Collision? Java..
-symbType :: Type -> Smt.Type
-symbType (PrimType IntT) = Smt.tInt
-symbType (PrimType BooleanT) = Smt.tBool
-symbType (RefType (ArrayType t)) = Smt.tArray Smt.tInt (symbType t)
-
--- Java literals I assume
-litType :: Literal -> Smt.Type
-litType (Int _) = Smt.tInt
-litType (Boolean _) = Smt.tBool
 
 
 
--- convert literal to expr?
-symbLit :: Literal -> Smt.Expr
-symbLit (Int n) = bv32 $ toInteger n
-symbLit (Boolean True) = Smt.true
-symbLit (Boolean False) = Smt.false
-
-symbTest :: MemberDecl -> [Int] -> Int -> Symb ()
-symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
-  overwriteVar "retVar" Smt.tInt
-  r <- getVar "retVar"
-  addAssert $ (smtVar r) Smt.=== (bv32 $ toInteger output)
-
-  overwriteVar "A" (Smt.tArray Smt.tInt Smt.tInt)
-  arr <- getVar "A"
-
-  overwriteVar "length" Smt.tInt
-  len <- getVar "length"
-  addAssert $ (smtVar len) Smt.=== (bv32 $ toInteger $ head $ inputs)
-
-  retVar .= r
-  mapM_ (\(e,i) -> do
-    v <- symb e
-    addAssert $ (smtVar v) Smt.=== (Smt.select (smtVar arr) (symbLit $ Int i))) (zip expInputs [0..])
-  symb b
-  where
-    expInputs = map (Lit . Int . toInteger) (tail inputs)
 
 
 
