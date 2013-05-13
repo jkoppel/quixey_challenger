@@ -1,4 +1,4 @@
-module Sketch where
+module Tarski.Sketch where
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map

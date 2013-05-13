@@ -1,4 +1,4 @@
-module StateManip where
+module Tarski.State.StateManip where
 
 import Control.Monad
 import Control.Monad.State
@@ -13,8 +13,8 @@ import qualified SMTLib2.Int as Smt
 import qualified SMTLib2.BitVector as Smt
 import qualified SMTLib2.Array as Smt
 
-import Sketch (sketchVars)
-import SymbState (SymbState, Symb, pathGuard, smt, sketchState)
+import Tarski.Sketch (sketchVars)
+import Tarski.State.SymbState (SymbState, Symb, pathGuard, smt, sketchState)
 
 {- Path Guards -}
 pushGuard :: Smt.Expr -> Symb ()

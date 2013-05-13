@@ -1,4 +1,4 @@
-module SymbState where
+module Tarski.State.SymbState where
 
 import Control.Monad.State
 import Control.Lens ( makeLenses )
@@ -11,7 +11,7 @@ import qualified SMTLib2.Int as Smt
 import qualified SMTLib2.BitVector as Smt
 import qualified SMTLib2.Array as Smt
 
-import Sketch
+import Tarski.Sketch
 
 data SymbState = SymbState { _counter :: Int,
                              _smt :: [Smt.Command],

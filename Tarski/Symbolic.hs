@@ -1,4 +1,4 @@
-module Symbolic where
+module Tarski.Symbolic where
 
 import Control.Monad
 import Control.Monad.State
@@ -18,11 +18,11 @@ import qualified SMTLib2.Array as Smt
 
 import Debug.Trace
 
-import Sketch (sketchVars, SketchState)
-import Lookups (opName, opType, symbType, litType)
-import Variable (tempVar, isSketchVar, vName, getVar, overwriteVar)
-import StateManip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
-import SymbState (SymbState, Symb, pathGuard, smt, sketchState, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
+import Tarski.Sketch (sketchVars, SketchState)
+import Tarski.Misc.Lookups (opName, opType, symbType, litType)
+import Tarski.State.Variable (tempVar, isSketchVar, vName, getVar, overwriteVar)
+import Tarski.State.StateManip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
+import Tarski.State.SymbState (SymbState, Symb, pathGuard, smt, sketchState, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
 
 
 {- Misc Functions -}

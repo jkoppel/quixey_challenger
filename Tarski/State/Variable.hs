@@ -1,4 +1,4 @@
-module Variable where
+module Tarski.State.Variable where
 
 import Control.Monad
 import Control.Monad.State
@@ -14,9 +14,9 @@ import qualified SMTLib2.Int as Smt
 import qualified SMTLib2.BitVector as Smt
 import qualified SMTLib2.Array as Smt
 
-import Sketch (sketchVars)
-import SymbState (SymbState, Symb, pathGuard, smt, sketchState, counter, varLab)
-import StateManip (addDeclareConst)
+import Tarski.Sketch (sketchVars)
+import Tarski.State.SymbState (SymbState, Symb, pathGuard, smt, sketchState, counter, varLab)
+import Tarski.State.StateManip (addDeclareConst)
 
 {- Variable Operations -}
 -- given a type, make a temporary variable. increment counter. add to stack.

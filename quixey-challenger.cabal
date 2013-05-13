@@ -29,8 +29,8 @@ executable quixey-challenger
   Ghc-Options:
             -Wall
 
-  other-modules:  Symbolic,
-                  Sketch,
+  other-modules:  Tarski.Symbolic,
+                  Tarski.Sketch,
                   Kure,
                   KureCong
 

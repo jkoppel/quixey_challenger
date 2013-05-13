@@ -1,4 +1,4 @@
-module Lookups where
+module Tarski.Misc.Lookups where
 
 import Language.Java.Syntax
 import qualified SMTLib2 as Smt
