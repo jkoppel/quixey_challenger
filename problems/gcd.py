@@ -2,11 +2,15 @@ def gcd(a, b):
     if b == 0:
         return a
     else:
-        return gcd(a % b, b),gcd,[def gcd(a, b):
+        return gcd(a % b, b),gcd,
+
+def gcd(a, b):
     if b == 0:
         return a
     else:
-        return gcd(b, a % b)],Input:
+        return gcd(b, a % b)
+
+nput:
     a: A nonnegative int
     b: A nonnegative int
 

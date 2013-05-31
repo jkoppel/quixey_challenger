@@ -1,0 +1,168 @@
+String[] numbers = { "one", "two", "three" };
+String[] names = new String[10];
+
+names[0] "Smerity";
+names[1] = "Josh";
+int i = 0;
+
+while (names[i] != null) {
+    System.out.println(names[i]);
+    i++;
+}
+for (i=0; i<numbers.length; i++) {
+    System.out.println(numbers[i]);
+}
+
+ArrayList<Integer> primes = new ArrayList<Integer>();
+primes.add(2);
+primes.add(3);
+primes.add(5);
+for (i=0; i<primes.size(); i++)
+    System.out.println(primes.get(i));
+
+for (Integer prime : primes)
+    System.out.println(prime);
+
+HashMap<Character, Integer> letters = new HashMap<Character, Integer>();
+
+for (Character c : "tree".toCharArray()) {
+    if (!letters.containsKey(c)) letters.put(c,0);
+    letters.put(c, letters.get(c)+1);
+
+}
+
+import java.util.Scanner;
+
+public class TempConv {
+    public static void main(String[] args) {
+        Double fahr;
+        Double cel;
+        Scanner in;
+
+        in = new Scanner(System.in);
+        System.out.println("Enter the temperature in F: ");
+        fahr = in.nextDouble();
+
+        cel = (fahr - 32) * 5.0/9.0;
+        System.out.println("The temperature in C is: " + cel);
+
+        System.exit(0);
+    }
+}
+
+import javax.swing.*;
+
+public class TempConvGUI {
+
+    public static void main(String[] args) {
+        String fahrString;
+        Double fahr, cel;
+
+        fahrString = JOptionPane.showInputDialog("Enter the temperature in F");
+        fahr = new Double(fahrString);
+        cel = (fahr - 32) * 5.0/9.0;
+
+        JOptionPane.showMessageDialog(null,"The temperature in C is, " + cel);
+    }
+}
+
+import java.util.Scanner;
+import java.util.ArrayList;
+import java.io.File;
+import java.io.IOException;
+
+public class Histo {
+
+    public static void main(String[] args) {
+        Scanner data = null;
+        ArrayList<Integer> count;
+        Integer idx;
+
+        try {
+                data = new Scanner(new File("test.dat"));
+        }
+        catch ( IOException e) {
+            System.out.println("Sorry but I was unable to open your data file");
+            e.printStackTrace();
+            System.exit(0);
+        }
+
+        count = new ArrayList<Integer>(10);
+        for (Integer i=0; i<10,i++) {
+            count.add(i,0);
+        }
+
+        while(data.hasNextInt()) {
+            idx = data.nextInt();
+            count.set(idx,count.get(idx)+1);
+        }
+
+        idx = 0;
+        for (Integer i : count) {
+            System.out.println(idx + " occured " + i + " times.");
+            idx++;
+        }
+    }
+}
+
+notice the set and get, since you cannot just slice index. this is for ArrayList
+
+ArrayList<Integer> l = new ArrayList<Integer>();
+l.add(1); l.add(2); l.add(3); l.add(4);
+for (Integer i : l) {
+    System.out.println(i)
+}
+
+String t = "Hello World";
+for (char c : t.toCharArray()) {
+    System.out.println(c);
+}
+
+public class Fraction extends Number {
+
+    private Integer numerator;
+    private Integer denominator;
+
+    public Fraction(Integer num, Integer den) {
+        this.numerator = num;
+        this.denominator = den;
+    }
+
+    public Fraction(Integer num) {
+        this.numerator = num;
+        this.denominator = 1;
+    }
+
+    public Fraction add(Fraction other) {
+        Integer newNum, newDen, common;
+
+        newNum = other.getDenominator()*this.numerator + this.denominator*other.getNumerator();
+        newDen = this.denominator * other.getDenominator();
+        common = gcd(newNum,newDen);
+        return new Fraction(newNum/common, newDen/common);
+    }
+
+    public Fraction add(Integer other) {
+        return add(new Fraction(other));
+    }
+
+    private static Integer gcd(Integer m, Integer n) {
+        while (m % n != 0) {
+            Integer oldm = m;
+            Integer oldn = n;
+            m = oldn;
+            n = oldm%oldn;
+        }
+        return n;
+    }
+
+    public static void main(String[] args) {
+        Fraction f1 = new Fraction(1,2);
+        Fraction f2 = new Fraction(2,3);
+
+        System.out.println(f1.mul(f2));
+        System.out.println(f1.add(1));
+    }
+}
+
+
