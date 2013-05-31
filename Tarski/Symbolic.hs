@@ -1,25 +1,22 @@
 module Tarski.Symbolic where
 
-import Control.Monad
 import Control.Monad.State
 import Control.Lens ( (^.), (.=), use, (+=), (-=) )
 
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import Data.Maybe
 
 import Language.Java.Syntax hiding (Assert)
 import Language.Java.Pretty (prettyPrint)
 import qualified SMTLib2 as Smt
 import qualified SMTLib2.Core as Smt
-import qualified SMTLib2.Int as Smt
 import qualified SMTLib2.BitVector as Smt
 import qualified SMTLib2.Array as Smt
 
 import Debug.Trace
 
 import Tarski.Sketch (SketchState)
-import Tarski.Misc.Lookups (opName, opType, symbType, litType)
+import Tarski.Lookups (opName, opType, symbType, litType)
 import Tarski.State.Variable (tempVar, vName, getVar, overwriteVar)
 import Tarski.State.Manip (addCmd, addAssert, addDeclareConst, declareSketchVars, pushGuard, popGuard, getGuard)
 import Tarski.State.SymbState (Symb, smt, retVar, varLab, startState, unrollDepth, maxUnrollDepth)
@@ -182,7 +179,7 @@ symbLit (Boolean True) = Smt.true
 symbLit (Boolean False) = Smt.false
 
 symbTest :: MemberDecl -> [Int] -> Int -> Symb ()
-symbTest (MethodDecl _ _ _ _ args _ (MethodBody (Just b))) inputs output = do
+symbTest (MethodDecl _ _ _ _ _ _ (MethodBody (Just b))) inputs output = do
   overwriteVar "retVar" tBV
   r <- getVar "retVar"
   addAssert $ (smtVar r) Smt.=== (bv32 $ toInteger output)

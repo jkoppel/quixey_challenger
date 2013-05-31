@@ -1,15 +1,6 @@
 import System.Process
-import System.IO
-import System.Random
-import System.Exit
 import System.Environment ( getArgs )
-import Control.Monad
 import Debug.Trace
-import Data.Int
-import Data.List.Split
-import System.Timeout
-import System.Directory
-import Mutate ( constantFold )
 import Data.Text (pack, unpack, strip)
 import Data.Text.Read (hexadecimal)
 import qualified Data.Map as M
@@ -21,13 +12,13 @@ import Control.Lens.Getter ( (^.) )
 import Language.Java.Syntax
 import Language.Java.Pretty
 
+import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
+import Tarski.Mutate ( constantFold )
 import Tarski.Symbolic
 import Tarski.Sketch
-import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
 
 --type Tests = [([Int],Int)] -- modify this? more general. can't be configurable as types are done
 
--- deals with configuration file
 main :: IO ()
 main = do args <- getArgs
           cfg <- case args of

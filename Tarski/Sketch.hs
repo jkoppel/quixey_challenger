@@ -16,7 +16,7 @@ import Language.KURE.Injection
 
 import Kure
 import KureCong
-import Mutate
+import Tarski.Mutate
 
 data SketchState = SketchState {
                           _sketchVars :: Set.Set String,
@@ -34,8 +34,7 @@ startSketchState = SketchState  {
                  }
 
 newSketchVar :: Sketch String
-newSketchVar = do s <- get
-                  n <- use nVars
+newSketchVar = do n <- use nVars
                   nVars += 1
                   vs <- use sketchVars
                   let nv = "sketch" ++ (show n)

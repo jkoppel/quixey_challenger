@@ -1,0 +1,21 @@
+Symbolic - symb
+    SymbTest - symbLit, symbTest
+    Misc - bv32, smtVar
+    *Guard - pushGuard, popGuard, getGuard
+    *Commands - addDeclareConst, addAssert
+    *Var Ops - tempVar, vName, getVar, overwriteVar
+    *Lookups - opName, opType, symbType, litType
+
+Misc - bv32, smtVar
+
+*Guard - pushGuard, popGuard, getGuard
+
+*Commands - addCmd, addAssert, declare, declareSketchVars, addDeclareConst
+
+*Var Ops - tempVar, isSketchVar, getVar, overwriteVar, vName
+    addDeclareConst
+
+*Lookups - opName, opType, symbType, litType
+
+EvalSketch
+    Commands - addCmd, declareSketchVars

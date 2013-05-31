@@ -1,28 +1,21 @@
     {-# LANGUAGE FlexibleInstances, TypeSynonymInstances, FlexibleContexts, MultiParamTypeClasses, UndecidableInstances, IncoherentInstances #-}
 
--- binary search and use explicit imports
-
-module Mutate where
+module Tarski.Mutate where
 
 import qualified Data.Map as Map
 
 import Control.Applicative ( Applicative )
-import Control.Monad ( liftM )
 import Control.Monad.Trans.Class ( lift )
 import Control.Monad.Error ( MonadError, throwError, catchError )
-import Control.Monad.Reader ( MonadReader, runReaderT, ask, runReader, ReaderT )
-import Control.Monad.Random ( MonadRandom, runRandT, evalRandT, getRandomR, RandT, getSplit )
-import Control.Monad.State ( MonadState, get, modify, evalStateT, StateT )
-import Data.Maybe ( fromJust )
-import Data.Monoid ( mconcat, Sum (Sum), getSum)
+import Control.Monad.Reader ( MonadReader, ask, runReader )
+import Control.Monad.Random ( evalRandT, RandT, getSplit )
+import Control.Monad.State ( MonadState, get, modify )
+import Data.Monoid ( mconcat, Sum (Sum) )
 import Debug.Trace
 
-import System.Environment ( getArgs )
-import System.Random ( getStdGen, randomRIO, RandomGen, randomR )
+import System.Random ( RandomGen  )
 
 import Language.Java.Syntax
-import Language.Java.Parser ( compilationUnit, parser )
-import Language.Java.Pretty ( pretty )
 
 import Language.KURE ( MonadCatch, catchM, translate, crushbuT, (<+), Translate, Rewrite, apply, constT, anybuR )
 import Language.KURE.Injection ( promoteT, inject, promoteR )
@@ -37,7 +30,6 @@ instance MonadError String KureM where
 
 instance MonadError String m => MonadCatch m where
   catchM = catchError
-
 
 instance (MonadError e m, RandomGen g) => MonadError e (RandT g m) where
   throwError = lift . throwError
@@ -154,12 +146,17 @@ countExp' = constT $ return $ Sum 1
 countExp :: (MonadCatch m, Applicative m) => Translate Context m GenericJava (Sum Int)
 countExp = crushbuT $ promoteT countExp'
 
+
+typ :: Exp -> Map.Map Ident JavaType -> JavaType
 typ e m = runReader (inferExp e) m
 
 
 is_int :: Exp -> TypeMap -> Bool
 is_int e m = (typ e m) == (Base $ PrimType IntT)
+
+
 is_bool e m = (typ e m) == (Base $ PrimType IntT)
+
 
 
 constantFold' :: Map.Map String Int -> Rewrite Context KureM Exp
