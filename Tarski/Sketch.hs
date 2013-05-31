@@ -16,7 +16,7 @@ import Language.KURE.Injection
 
 import Kure
 import KureCong
-import Mutate hiding (not)
+import Mutate
 
 data SketchState = SketchState {
                           _sketchVars :: Set.Set String,

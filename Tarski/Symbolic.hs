@@ -103,7 +103,6 @@ instance Symbolic Stmt () where
            (Map.toList m1)
       mapM_ (\(x,n) -> addAssert $ g2 Smt.==> ((mVar x m4) Smt.=== (branch2Var x m1 m2 m3)))
            (Map.toList m1)
-      -- oh god
     where
      lookup x m = fromJust $ Map.lookup x m
 

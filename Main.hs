@@ -9,7 +9,7 @@ import Data.Int
 import Data.List.Split
 import System.Timeout
 import System.Directory
-import Mutate
+import Mutate ( constantFold )
 import Data.Text (pack, unpack, strip)
 import Data.Text.Read (hexadecimal)
 import qualified Data.Map as M

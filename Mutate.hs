@@ -1,5 +1,7 @@
     {-# LANGUAGE FlexibleInstances, TypeSynonymInstances, FlexibleContexts, MultiParamTypeClasses, UndecidableInstances, IncoherentInstances #-}
 
+-- binary search and use explicit imports
+
 module Mutate where
 
 import qualified Data.Map as Map
@@ -45,11 +47,13 @@ instance (MonadError e m, RandomGen g) => MonadError e (RandT g m) where
                         let f' e = evalRandT (f e) g'
                         lift $ evalRandT m g `catchError` f'
 
+
 data JavaType = Base Type
               | Top
               deriving (Show, Eq)
 
 type TypeMap = Map.Map Ident JavaType
+
 
 nextLabel :: (Num a, MonadState a m) => m a
 nextLabel = do n <- get
@@ -57,16 +61,13 @@ nextLabel = do n <- get
                return n
 
 
-randElt :: MonadRandom m => [a] -> m a
-randElt l = do n <- getRandomR (0, (length l) - 1)
-               return $ l !! n --(trace ("n is :" ++ show n) n)
-
 convertVarDeclId :: JavaType -> VarDeclId -> (Ident, JavaType)
 convertVarDeclId t (VarId id) = (id, t)
 --convertVarDeclId t (VarDeclArray v) = convertVarDeclId (Array t) v
 
 getVarDeclId :: VarDecl -> VarDeclId
 getVarDeclId (VarDecl v _) = v
+
 
 localVarDecls :: TranslateJ BlockStmt TypeMap
 localVarDecls = translate $ \_ v -> case v of
@@ -84,6 +85,7 @@ methDecs = translate $ \_ m -> case m of
 
 getTypeMap :: TranslateJ GenericJava TypeMap
 getTypeMap = crushbuT $ (promoteT localVarDecls) <+ (promoteT argDecls) <+ (promoteT methDecs)
+
 
 inferLit :: Literal -> JavaType
 inferLit (Int _) = Base $ PrimType IntT
@@ -146,109 +148,18 @@ inferExp (InstanceCreation _ t _ _) = return $ Base $ RefType $ ClassRefType t
 inferExp (ArrayCreate _ _ _) = return Top
 inferExp _ = fail "unimplemented"
 
-showExpTypes' :: MonadReader TypeMap m => Translate Context m Exp String
-showExpTypes' = translate $ \_ e -> do t <- inferExp e
-                                       return $ (show $ pretty e) ++ "   ::    " ++ (show t) ++ "\n\n"
-
-showExpTypes :: (MonadReader TypeMap m, MonadCatch m, Applicative m) => Translate Context m GenericJava String
-showExpTypes = crushbuT $ promoteT showExpTypes'
-
 countExp' :: MonadCatch m => Translate Context m Exp (Sum Int)
 countExp' = constT $ return $ Sum 1
 
 countExp :: (MonadCatch m, Applicative m) => Translate Context m GenericJava (Sum Int)
 countExp = crushbuT $ promoteT countExp'
 
-data Mutation =  Mutation { applicable :: Exp -> TypeMap -> Bool,
-                            mutate :: Exp -> Exp }
-
-
 typ e m = runReader (inferExp e) m
+
 
 is_int :: Exp -> TypeMap -> Bool
 is_int e m = (typ e m) == (Base $ PrimType IntT)
 is_bool e m = (typ e m) == (Base $ PrimType IntT)
-
-is_binop (BinOp _ _ _) _ = True
-is_binop _ _             = False
-
-plusOne = Mutation { applicable = is_int,
-                     mutate = \e -> BinOp e Add (Lit $ Int 1) }
-
-subOne = Mutation { applicable = is_int,
-                     mutate = \e -> BinOp e Sub (Lit $ Int 1) }
-zero = Mutation { applicable = is_int,
-                  mutate = \e -> Lit $ Int 0 }
-not = Mutation { applicable = is_bool,
-                 mutate = \e -> PreNot e }
-
-change_lte = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m],
-                        mutate = \(BinOp e1 _ e2) -> BinOp e1 LThanE e2 }
-change_lt = Mutation { applicable = \e m -> and [is_binop e m, is_bool e m],
-                        mutate = \(BinOp e1 _ e2) -> BinOp e1 LThan e2 }
-
-
-left_proj = Mutation { applicable = is_binop,
-                       mutate = \(BinOp e1 o e2) -> e1 }
-right_proj = Mutation { applicable = is_binop,
-                       mutate = \(BinOp e1 o e2) -> e2 }
-strip_unop = Mutation { applicable = \e m -> case e of
-                                                PostIncrement _ -> True
-                                                PostDecrement _ -> True
-                                                PreIncrement _ -> True
-                                                PreDecrement _ -> True
-                                                PrePlus _ -> True
-                                                PreMinus _ -> True
-                                                PreBitCompl _ -> True
-                                                PreNot _ -> True
-                                                _ -> False,
-
-                        mutate = \e -> case e of
-                               PostIncrement e -> e
-                               PostDecrement e -> e
-                               PreIncrement e -> e
-                               PreDecrement e -> e
-                               PrePlus e -> e
-                               PreMinus e -> e
-                               PreBitCompl e -> e
-                               PreNot e -> e }
-
-allMutations = [ plusOne, subOne, zero, left_proj, right_proj, strip_unop ]
-
-mutateExp' :: {-(MonadRandom m, MonadReader TypeMap m, MonadState Int m, MonadCatch m)  => -} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) Exp
-mutateExp' n = translate $ \_ e -> do l <- lift nextLabel
-                                      if l /= n
-                                       then
-                                        return e
-                                       else
-                                        do tm <- ask
-                                           let goodMutations = filter (\m -> applicable m e tm) allMutations
-                                           if null $ goodMutations
-                                            then
-                                              return e
-                                            else
-                                              do m <- lift $ lift $ randElt goodMutations
-                                                 return $ mutate m e
-
-
-mutateExp :: {-(MonadRandom m, MonadReader TypeMap m)-} RandomGen g => Int -> Rewrite Context (ReaderT TypeMap (StateT Int (RandT g KureM))) GenericJava
-mutateExp n = anybuR $ promoteR $ mutateExp' n
-
-
-
-mutateProgram :: RandomGen g => g -> String -> (String, g)
-mutateProgram g str = case parser compilationUnit str of
-                       Left err -> error ("Parse error: " ++ (show err))
-                       Right tree -> let tm' = runKureM id (error "type map failed") (apply getTypeMap initialContext (inject tree))
-                                         tm = Map.insert (Ident "length") (Base $ PrimType IntT) tm'
-                                         nExp = getSum $ runKureM id (error "count exp failed") (apply countExp initialContext (inject tree))
-                                         (i, g') = randomR (0,nExp-1) g
-                                         t = runReaderT (apply (mutateExp i) initialContext (inject tree)) tm
-                                         t' = evalStateT t 0
-                                         t'' = runRandT t' g'
-                                         (t''', g'') = runKureM (\(GCompilationUnit c,h) -> (c,h)) (error "thing failed") t''  in
-                                     (show $ pretty t''' , g'')
-
 
 
 constantFold' :: Map.Map String Int -> Rewrite Context KureM Exp
