@@ -29,3 +29,7 @@ p1 = subprocess.Popen(["/usr/bin/java", "MyClass"], stdout=subprocess.PIPE)
 print p1.stdout.read()
 
 Use Popen.communicate() to perform a blocking read until popened process terminates
+
+
+
+JAVA classloader
