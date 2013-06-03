@@ -2,21 +2,21 @@ module Tarski.Sketch where
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Data.Monoid
+import Data.Monoid (getSum)
 
-import Control.Monad.Reader
-import Control.Monad.State
+import Control.Monad.Reader (ask, ReaderT, runReaderT)
+import Control.Monad.State (evalStateT, runState, lift, State, StateT)
 import Control.Lens ( makeLenses, (+=), (.=), use )
 
 import Language.Java.Parser
 import Language.Java.Syntax
 import Language.KURE
 import Language.KURE.Utilities
-import Language.KURE.Injection
+import Language.KURE.Injection (promoteR, promoteT, inject)
 
 import Kure
-import KureCong
-import Tarski.Mutate
+import KureCong (Context, initialContext)
+import Tarski.Mutate (countExp, getTypeMap, is_int, nextLabel, TypeMap)
 
 data SketchState = SketchState {
                           _sketchVars :: Set.Set String,

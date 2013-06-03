@@ -5,7 +5,7 @@ import Data.Text (pack, unpack, strip)
 import Data.Text.Read (hexadecimal)
 import qualified Data.Map as M
 
-import Data.List
+import Data.List (isPrefixOf)
 
 import Control.Lens.Getter ( (^.) )
 
@@ -14,8 +14,8 @@ import Language.Java.Pretty
 
 import Tarski.Config ( Config, readConfig, filePath, testCases, methodName, holeDepth, maxUnrollDepth )
 import Tarski.Mutate ( constantFold )
-import Tarski.Symbolic
-import Tarski.Sketch
+import Tarski.Symbolic (evalSketch)
+import Tarski.Sketch (genSketches, SketchState)
 
 --type Tests = [([Int],Int)] -- modify this? more general. can't be configurable as types are done
 

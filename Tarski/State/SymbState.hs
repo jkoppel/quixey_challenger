@@ -1,13 +1,13 @@
 module Tarski.State.SymbState where
 
-import Control.Monad.State
+import Control.Monad.State (State)
 import Control.Lens ( makeLenses )
 
 import Data.Map as Map
 
 import qualified SMTLib2 as Smt
 
-import Tarski.Sketch
+import Tarski.Sketch (SketchState)
 
 data SymbState = SymbState { _counter :: Int,
                              _smt :: [Smt.Command],

@@ -19,7 +19,7 @@ import Control.Applicative (Applicative, (<*>))
 import Language.Haskell.TH ( mkName )
 import Language.Haskell.TH.Syntax
 
-import Language.KURE
+import Language.KURE (AbsolutePath, extendAbsPath, Generic, MonadCatch, Node, rootAbsPath)
 import Language.KURE.Injection
 
 

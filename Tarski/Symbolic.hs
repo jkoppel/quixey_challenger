@@ -1,6 +1,6 @@
 module Tarski.Symbolic where
 
-import Control.Monad.State
+import Control.Monad.State (execState)
 import Control.Lens ( (^.), (.=), use, (+=), (-=) )
 
 import qualified Data.Map as Map

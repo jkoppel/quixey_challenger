@@ -4,18 +4,13 @@ module Kure where
 
 import Prelude hiding (id , (.))
 
-import Control.Applicative
-import Control.Category
-
-import Control.Monad
-import Control.Monad.Identity
+import Control.Category (id, (.))
 
 import Language.Java.Syntax
-import Language.KURE
-import Language.KURE.Injection
-import Language.KURE.Utilities
+import Language.KURE (apply, Translate)
+import Language.KURE.Utilities (KureM, runKureM)
 
-import KureCong
+import KureCong (Context, initialContext)
 import Boilerplate
 
 --------------------------------------------------------------------------------

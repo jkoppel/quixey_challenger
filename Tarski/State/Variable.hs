@@ -8,7 +8,7 @@ import qualified Data.Set as Set
 import qualified SMTLib2 as Smt
 
 import Tarski.Sketch (sketchVars)
-import Tarski.State.SymbState (Symb, sketchState, counter, varLab)
+import Tarski.State.SymbState (counter, sketchState, Symb, varLab)
 import Tarski.State.Manip (addDeclareConst)
 
 {- Variable Operations -}
