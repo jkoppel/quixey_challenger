@@ -10,7 +10,8 @@ import java.util.*;
  */
 public class DETECT_CYCLE {
     public static boolean detect_cycle(Node node) {
-        Node hare, tortoise = node;
+        Node hare = node;
+        Node tortoise = node;
         
         while (true) {
             if (hare.successor() == null)
@@ -21,6 +22,13 @@ public class DETECT_CYCLE {
             
             if (hare == tortoise)
                 return true;
+        }
+    }
+    
+    public static class Node {
+        Node successor;
+        public Node successor() {
+            return successor;
         }
     }
 }

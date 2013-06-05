@@ -9,14 +9,16 @@ import java.util.*;
  * @author derricklin
  */
 public class FLATTEN {
-    public static ArrayList flatten(ArrayList arr) {
+    public static List<Object> flatten(List<?> arr) {
+        List<Object> result = new ArrayList<Object>();
         for (Object x : arr) {
             if (x instanceof List<?>) {
-                for (ArrayList y : flatten(x))
-                    yield y;
+                for (Object y : flatten((List<?>) x))
+                    result.add(y);
             } else {
-                yield flatten(x);
+                result.add(flatten((List<?>) x));
             }
         }
+        return result;
     }
 }

@@ -10,16 +10,29 @@ import java.util.*;
  */
 public class DEPTH_FIRST_SEARCH {
     
-    public static Set<Node> nodesvisited = new Set<Node>();
+    public static Set<Node> nodesvisited = new HashSet<Node>();
     
     public static boolean depth_first_search(Node startnode, Node goalnode) {
         
-        return search_from(startnode);
+        if (nodesvisited.contains(startnode)) {
+            return false;
+        } else if (startnode.equals(goalnode)) {
+            return true;
+        } else {
+            for (Node nextnode : startnode.successors) {
+                boolean check = depth_first_search(nextnode, goalnode);
+                if (check == true) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
     
-    public static boolean search_from(Node node) {
-        if (nodesvisited.contains(node)) {
-            return false;
-        } else if (no)
+    public class Node {
+        List<Node> successors = new ArrayList<Node>();
+        public List<Node> successors() {
+            return successors;
+        }
     }
 }

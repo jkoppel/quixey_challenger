@@ -10,7 +10,7 @@ import java.util.*;
  */
 public class LIS {
     public static int lis(int[] arr) {
-        Map ends = new HashMap<Integer, Integer>();
+        Map<Integer,Integer> ends = new HashMap<Integer, Integer>();
         int longest = 0;
         
         int i = 0;

@@ -1,4 +1,4 @@
-import.java.util.*;
+import java.util.*;
 
 /*
  * To change this template, choose Tools | Templates
@@ -10,22 +10,27 @@ import.java.util.*;
  * @author derricklin
  */
 public class SHORTEST_PATHS {
-    public static Map<Char, Integer> shortest_paths(Char source, Map<Pair<Char,Char>, Integer> weight_by_edge) {
-        double inf = Double.POSITIVE_INFINITY;
-        Map<Pair<Char,Char>, Double> weight_by_edge = new HashMap<Pair<Char,Char>, Double>();
-        for (Pair (u,v) : weight_by_edge.keySet()) {
-            weight_by_node.put(Pair(u,v), inf);
+    public static Map<Character, Integer> shortest_paths(char source, Map<Character, Map<Character,Integer>> weight_by_edge) {
+        Map<Character,Integer> weight_by_node = new HashMap<Character,Integer>();
+        for (char u : weight_by_edge.keySet()) {
+            for (char v : weight_by_edge.get(u).keySet()) {
+                weight_by_node.put(v, Integer.MAX_VALUE);
+            }
         }
-        weight_by_node.put(source, 0);
+        weight_by_node.put(source,0);
         
-        for (int i=0, i<n-1; i++) {
-            for (Pair (u,v) : weight_by_edge.keySet()) {
-                weigh_by_edge.put(Pair(u,v),
-                        Math.min(
-                            weight_by_node.get(u) + weigh_by_edge.get(Pair(u,v)),
-                            weight_by_node.get(v)
-                        )
-                )
+        for (int i=0; i<weight_by_node.size()-1; i++) {
+            for (char u : weight_by_edge.keySet()) {
+                for (char v : weight_by_edge.get(u).keySet()) {
+                    Integer weight = weight_by_edge.get(u).get(v);
+                    Integer ins_value = Math.min(
+                            weight_by_node.get(u)+weight, 
+                            weight_by_node.get(v));
+                    
+                    Map<Character,Integer> to_update = weight_by_edge.get(u);
+                    to_update.put(v, ins_value);
+                    weight_by_edge.put(u, to_update);
+                }
             }
         }
         

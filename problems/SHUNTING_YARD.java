@@ -10,32 +10,49 @@ import java.util.*;
  * @author derricklin
  */
 public class SHUNTING_YARD {
-    public static List<? extends Token> shunting_yard(List<? extends Token> tokens) {
-        Map<Char, int> precedence = new HashMap<Char, int>();
+    public static List<Token> shunting_yard(List<Token> tokens) {
+        Map<Character, Integer> precedence = new HashMap<Character, Integer>();
         precedence.put('+',1);
         precedence.put('-',1);
         precedence.put('*',2);
         precedence.put('/',2);
         
-        ArrayList<? extends Token> rpntokens = new ArrayList<? extends Token>();
-        ArrayList<? extends Token> opstack = new ArrayList<? extends Token>();
+        ArrayList<Token> rpntokens = new ArrayList<Token>();
+        Deque<Op> opstack = new ArrayDeque<Op>();
         
         for (Token token: tokens) {
-            if (token instanceof int) {
-                rpntokens.add(token)
+            if (Value.class.isInstance(token)) {
+                rpntokens.add(token);
             } else {
-                while (!opstack.isEmpty() && precedence.get(token) <= precedence.get(opstack.getLast())) {
-                    rpntokens.add(opstack.getLast());
-                    opstack.removeLast();
+                Op operator = (Op) token;
+                char op = operator.op;
+                while (!opstack.isEmpty() && precedence.get(op) <= precedence.get(opstack.getLast().getOp())) {
+                    rpntokens.add(opstack.pop());
                 }
             }
         }
         
         while (!opstack.isEmpty()) {
-            rpntokens.add(opstack.getLast());
-            opstack.removeLast();
+            rpntokens.add(opstack.pop());
         }
         
         return rpntokens;
+    }
+    
+    
+    
+    
+    public static class Token {}
+    public static class Op extends Token {
+        char op;
+        public char getOp() {
+            return op;
+        }
+    }
+    public static class Value extends Token {
+        int value;
+        public Value(int val) {
+            value = val;
+        }
     }
 }

@@ -14,10 +14,20 @@ public class REVERSE_LINKED_LIST {
         Node prevnode = null;
         Node nextnode;
         while (node != null) {
-            nextnode = node.successor;
-            node.successor = prevnode;
+            nextnode = node.successor();
+            node.successorSetter(prevnode);
             node = nextnode;
         }
         return prevnode;
+    }
+    
+    public static class Node {
+        Node successor;
+        public Node successor() {
+            return successor;
+        }
+        public void successorSetter(Node newnode) {
+            successor = newnode;
+        }
     }
 }
