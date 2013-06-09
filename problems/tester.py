@@ -1,35 +1,28 @@
-use importlib
+# use importlib
 
 import sys
+import subprocess
+from py4j.java_collections import SetConverter, MapConverter, ListConverter
 
-mm = sys.argv[1]
+name = sys.argv[1]
+argt = sys.argv[2:]
+module = __import__(name)
 
+fx = getattr(module, name)
 
-import foo
-fx = getattr(foo, 'bar')()
-
-
-def install():
-    print "In install"
-
-    method_name = 'install' # set by the command line options
-    possibles = globals().copy()
-    possibles.update(locals())
-    method = possibles.get(method_name)()
-    if not method:
-        raise Exception("Method %s not implemented" % method_name)
-    method()
+gateway = JavaGateway(auto_convert=True)
 
 
-subprocess.check_output
-Popen.communicate
-pexpect
+def check(*args):
+    py_out = fx(*args)
+    p1 = subprocess.Popen(["/usr/bin/java", name], stdout=subprocess.PIPE)
+    java_out = p1.stdout.read()
+    if py_out == java_out:
+        return True
+    else:
+        print "Python: " + py_out
+        print "Java: " + java_out
+        return False
 
-p1 = subprocess.Popen(["/usr/bin/java", "MyClass"], stdout=subprocess.PIPE)
-print p1.stdout.read()
 
-Use Popen.communicate() to perform a blocking read until popened process terminates
-
-
-
-JAVA classloader
+check(argt)
