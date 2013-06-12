@@ -2,7 +2,8 @@ def gcd(a, b):
     if b == 0:
         return a
     else:
-        return gcd(a % b, b),gcd,
+        return gcd(a % b, b)
+"""
 
 def gcd(a, b):
     if b == 0:
@@ -10,6 +11,9 @@ def gcd(a, b):
     else:
         return gcd(b, a % b)
 
+"""
+
+"""
 nput:
     a: A nonnegative int
     b: A nonnegative int
@@ -26,3 +30,5 @@ Output:
 Example:
     >>> gcd(35, 21)
     7
+
+"""

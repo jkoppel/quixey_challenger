@@ -1,3 +1,4 @@
+"""
 def kth(arr, k):
     pivot = arr[0]
     below = [x for x in arr if x < pivot]
@@ -12,6 +13,7 @@ def kth(arr, k):
         return kth(above, k)
     else:
         return pivot
+"""
 
 def kth(arr, k):
     pivot = arr[0]
@@ -29,6 +31,7 @@ def kth(arr, k):
         return pivot
 
 
+"""
 QuickSelect
 
 This is an efficient equivalent to sorted(arr)[k].
@@ -42,3 +45,4 @@ Precondition:
 
 Output:
     The kth-lowest element of arr (0-based)
+"""
