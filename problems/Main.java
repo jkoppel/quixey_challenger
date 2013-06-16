@@ -60,7 +60,7 @@ public class Main {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getCause());
         }
 
     }

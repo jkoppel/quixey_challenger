@@ -18,7 +18,10 @@ fx = getattr(module, name)
 
 
 def check(*args):
-    py_out = fx(*args)
+    try:
+        py_out = fx(*args)
+    except:
+        py_out = sys.exc_info()
     p1 = subprocess.Popen(["/usr/bin/java", "Main", name]+str_args, stdout=subprocess.PIPE)
     java_out = p1.stdout.read()
     if py_out == java_out:
