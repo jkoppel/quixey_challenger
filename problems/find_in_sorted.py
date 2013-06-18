@@ -27,6 +27,8 @@ def find_in_sorted(arr, x):
     return binsearch(0, len(arr))
 
 
+
+"""
 Binary Search
 
 Input:
@@ -39,3 +41,4 @@ Output:
 Example:
     >>> find_in_sorted([3, 4, 5, 5, 5, 5, 6], 5)
     3
+"""

@@ -72,7 +72,7 @@ def find_first_in_sorted(arr, x):
     return -1
 
 
-
+"""
 Fancy Binary Search
 fancy-binsearch
 
@@ -87,3 +87,4 @@ Output:
 Example:
     >>> find_first_in_sorted([3, 4, 5, 5, 5, 5, 6], 5)
     2
+"""

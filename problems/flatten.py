@@ -16,6 +16,7 @@ def flatten(arr):
             yield x
 
 
+"""
 Flatten
 
 Flattens a nested list data structure into a single list.
@@ -33,3 +34,4 @@ Output:
 Example:
     >>> list(flatten([[1, [], [2, 3]], [[4]], 5]))
     [1, 2, 3, 4, 5]
+"""

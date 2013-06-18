@@ -10,7 +10,7 @@ def kheapsort(arr, k):
     while heap:
         yield heapq.heappop(heap)
 
-
+"""
 def kheapsort(arr, k):
     import heapq
 
@@ -22,8 +22,10 @@ def kheapsort(arr, k):
 
     while heap:
         yield heapq.heappop(heap)
+"""
 
 
+"""
 K-Heapsort
 k-heapsort
 
@@ -47,3 +49,4 @@ Example:
     [1, 2, 3, 4, 5]
     >>> list(kheapsort([1, 2, 3, 4, 5], 0))
     [1, 2, 3, 4, 5]
+"""

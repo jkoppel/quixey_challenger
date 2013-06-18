@@ -30,6 +30,7 @@ def get_factors(n):
     return []
 
 
+"""
 Prime Factorization
 
 
@@ -51,3 +52,4 @@ Examples:
     [2, 2, 5, 5]
     >>> get_factors(101)
     [101]
+"""
