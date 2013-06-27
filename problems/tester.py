@@ -4,17 +4,6 @@
 import sys
 import subprocess
 
-
-# let's do just filename, first line is name of program
-# other lines will be input args?
-name = sys.argv[1]
-str_args = sys.argv[2:]
-argt = []
-for arg in str_args:
-    argt.append(eval(arg))
-
-
-
 def py_try(name,flag,*args):
     # import from within a folder?
     if flag == True:
@@ -30,11 +19,10 @@ def py_try(name,flag,*args):
         return sys.exc_info()
 
 
-
-def check(*args):
+def check(name,*args):
     py_out_good = py_try(name,True,*args)
     py_out_test = py_try(name,False,*args)
-    p1 = subprocess.Popen(["/usr/bin/java", "Main", name]+str_args, stdout=subprocess.PIPE)
+    p1 = subprocess.Popen(["/usr/bin/java", "Main", name]+list(str(argt)), stdout=subprocess.PIPE)
     java_out = p1.stdout.read()
 
 
@@ -42,5 +30,24 @@ def check(*args):
     print "Python: " + str(py_out_test)
     print "Java: " + str(java_out)
 
+# let's do just filename, first line is name of program
+# other lines will be input args?
+name = sys.argv[1]
+working_file = open("testcases/"+name+".txt", 'r')
 
-check(*argt)
+for line in working_file:
+    stuff = eval(line)
+    print stuff
+    argt, correct = stuff
+
+    check(name,*argt)
+
+# str_args = sys.argv[2:]
+# argt = []
+# for arg in str_args:
+#     argt.append(eval(arg))
+
+
+
+
+
