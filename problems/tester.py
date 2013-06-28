@@ -22,7 +22,8 @@ def py_try(name,flag,*args):
 def check(name,*args):
     py_out_good = py_try(name,True,*args)
     py_out_test = py_try(name,False,*args)
-    p1 = subprocess.Popen(["/usr/bin/java", "Main", name]+list(str(argt)), stdout=subprocess.PIPE)
+    p1 = subprocess.Popen(["/usr/bin/java", "Main", name]+ \
+                          [str(arg) for arg in argt], stdout=subprocess.PIPE)
     java_out = p1.stdout.read()
 
 
