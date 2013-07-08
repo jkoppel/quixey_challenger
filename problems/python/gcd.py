@@ -6,7 +6,7 @@ def gcd(a, b):
 
 
 """
-nput:
+Input:
     a: A nonnegative int
     b: A nonnegative int
 

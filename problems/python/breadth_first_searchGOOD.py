@@ -20,7 +20,7 @@ def breadth_first_search(startnode, goalnode):
     return False
 
 
-
+"""
 from collections import deque as Queue
 
 def breadth_first_search(startnode, goalnode):
@@ -85,3 +85,4 @@ def breadth_first_search(startnode, goalnode):
 
     return False
 
+"""

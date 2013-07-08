@@ -11,6 +11,8 @@ def detect_cycle(node):
         if hare is tortoise:
             return True
 
+
+"""
 def detect_cycle(node):
     hare = tortoise = node
 
@@ -23,3 +25,4 @@ def detect_cycle(node):
 
         if hare is tortoise:
             return True
+"""

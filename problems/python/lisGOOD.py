@@ -15,6 +15,7 @@ def lis(arr):
 
     return longest
 
+"""
 def lis(arr):
     ends = {}
     longest = 0
@@ -30,4 +31,4 @@ def lis(arr):
             longest = max(length + 1, longest)
 
     return longest
-
+"""

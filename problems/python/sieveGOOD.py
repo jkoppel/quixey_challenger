@@ -6,6 +6,7 @@ def sieve(max):
             primes.append(n)
     return primes
 
+"""
 def sieve(max):
     primes = []
     for n in range(2, max + 1):
@@ -27,3 +28,4 @@ def sieve(max):
             primes.append(n)
     return primes
 
+"""

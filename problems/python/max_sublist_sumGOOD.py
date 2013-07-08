@@ -9,6 +9,7 @@ def max_sublist_sum(arr):
 
     return max_so_far
 
+"""
 def max_sublist_sum(arr):
     max_ending_here = 0
     max_so_far = 0
@@ -40,3 +41,4 @@ def max_sublist_sum(arr):
 
     return max_so_far
 
+"""

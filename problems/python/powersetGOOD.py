@@ -7,6 +7,7 @@ def powerset(arr):
     else:
         return [[]]
 
+"""
 def powerset(arr):
     if arr:
         first, *rest = arr
@@ -14,4 +15,4 @@ def powerset(arr):
         return [[first] + subset for subset in rest_subsets] + rest_subsets
     else:
         return [[]]
-
+"""
