@@ -9,4 +9,3 @@
 (['ABCD','XBCYDQ'],'BCD')
 (['acbdegcedbg','begcfeubk'],'begceb')
 
-need to verify one that can determine between buggy and nonbuggy version

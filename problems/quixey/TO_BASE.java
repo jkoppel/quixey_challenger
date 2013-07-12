@@ -18,7 +18,7 @@ public class TO_BASE {
         while (num > 0) {
             i = num % b;
             num = num / b; // floor division?
-            result.concat(String.valueOf(alphabet.charAt(i)));
+            result += String.valueOf(alphabet.charAt(i));
         }
 
         return result;
