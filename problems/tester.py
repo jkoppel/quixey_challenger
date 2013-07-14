@@ -33,7 +33,6 @@ def check(name,*args):
     else:
         print "Python: " + str(py_out_test)
 
-    print [str(arg) for arg in args]
     try:
         p1 = subprocess.Popen(["/usr/bin/java", "Main", name]+ \
                             [str(arg) for arg in args], stdout=subprocess.PIPE)

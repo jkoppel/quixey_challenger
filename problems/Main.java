@@ -18,6 +18,7 @@ public class Main {
         String sMethodName = args[0];
         String[] input_args = Arrays.copyOfRange(args, 1, args.length);
         String sClassName = sMethodName.toUpperCase();
+        System.out.println(input_args[0]);
 
         try {
             Class target_class = Class.forName("quixey."+sClassName);
@@ -38,6 +39,7 @@ public class Main {
                         obj_args[i] = parser((Class) type, arg);
                     }
 
+                    System.out.println(String.valueOf(obj_args));
 
 
                     String returnValue = String.valueOf(m.invoke(null, obj_args));
@@ -64,8 +66,9 @@ public class Main {
     }
 
     public static Object parser(Class type, String arg) {
-        System.out.println(String.valueOf(type));
+        // System.out.println(String.valueOf(type));
         if (type == Object.class) {
+            System.out.println("object class..");
             // try to figure it out by looking at the first char
             // ' String, python
             // [ List
@@ -113,20 +116,68 @@ public class Main {
             }
 
             return to_return;
-        //} else if (type.equals(Array.class)) {
-        //    Type generic_type = ((ParameterizedType) (Type) type).getActualTypeArguments()[0];
-        //    String[] args = arg.substring(1,arg.length()-1).split("\\s*,\\s*");
-        //    int length = args.length;
-        //    Object[] to_return = new Object[length];
+        } else if (type.isArray()) {
+            System.out.println("hit array condition");
+            String[] args = arg.substring(1,arg.length()-1).split("\\s*,\\s*");
+            System.out.println(String.valueOf(args));
+            int length = args.length;
+            Type generic_type = type.getComponentType();
+            System.out.println("component type is "+String.valueOf(generic_type));
+            try {
+                generic_type = loadIt(String.valueOf(generic_type));
+                System.out.println("converted type is "+String.valueOf(generic_type));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Object to_return = java.lang.reflect.Array.newInstance((Class) generic_type,length);
 
-        //    for (int i =0; i < length; i++) {
-        //        String current_arg = args[i];
-        //        to_return[i] = parser((Class) generic_type,current_arg);
-        //    }
+            // if ((Type) type instanceof ParameterizedType) {
+            //     generic_type = ((ParameterizedType) (Type) type).getActualTypeArguments()[0];
+            // }
 
-        //    return to_return;
+            for (int i=0; i < length; i++) {
+                String current_arg = args[i];
+                System.out.println("generic_type is "+String.valueOf((Class) generic_type));
+                System.out.println("current arg is "+String.valueOf((current_arg)));
+                System.out.println("parsed value is "+String.valueOf(parser((Class) generic_type, current_arg)));
+                System.out.println("parsed type is "+String.valueOf(parser((Class) generic_type, current_arg).getClass()));
+
+                if (String.valueOf((Class) generic_type).equals("int")) {
+                    System.out.println("int condition");
+                    System.out.println(String.valueOf(type));
+                    java.lang.reflect.Array.setInt(to_return, i, (int) parser((Class) generic_type,current_arg));
+                } else {
+                    System.out.println("bypassing and trying to use Object");
+                    Array.set(to_return, i, (Object) parser((Class) generic_type,current_arg));
+                    // I have to use the right fucking set function!!!
+                }
+
+            }
+            return to_return;
         } else {
+            System.out.println(String.valueOf(type));
+            System.out.println("passing thru");
             return arg; // do some transformation?
+        }
+    }
+
+    private static  Map<String, Class<?>> primitiveClasses = new HashMap<String, Class<?>>();
+
+    static {
+            primitiveClasses.put("byte", byte.class);
+            primitiveClasses.put("short", short.class);
+            primitiveClasses.put("char", char.class);
+            primitiveClasses.put("int", int.class);
+            primitiveClasses.put("long", long.class);
+            primitiveClasses.put("float", float.class);
+            primitiveClasses.put("double", double.class);
+    }
+
+    public static Class<?> loadIt(String name) throws Exception {
+        if (primitiveClasses.containsKey(name)) {
+            return primitiveClasses.get(name);
+        } else {
+            return Class.forName(name);
         }
     }
 }
