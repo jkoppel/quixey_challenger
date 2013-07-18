@@ -18,7 +18,7 @@ public class Main {
         String sMethodName = args[0];
         String[] input_args = Arrays.copyOfRange(args, 1, args.length);
         String sClassName = sMethodName.toUpperCase();
-        System.out.println(input_args[0]);
+        // System.out.println(input_args[0]);
 
         try {
             Class target_class = Class.forName("quixey."+sClassName);
@@ -39,7 +39,7 @@ public class Main {
                         obj_args[i] = parser((Class) type, arg);
                     }
 
-                    System.out.println(String.valueOf(obj_args));
+                    // System.out.println(String.valueOf(obj_args));
 
 
                     String returnValue = String.valueOf(m.invoke(null, obj_args));
@@ -57,7 +57,7 @@ public class Main {
 
         } catch (ClassNotFoundException e) {
             System.out.println("aww");
-            e.printStackTrace();
+            //e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("nuu"+e.getCause());
@@ -66,9 +66,9 @@ public class Main {
     }
 
     public static Object parser(Class type, String arg) {
-        // System.out.println(String.valueOf(type));
+        System.out.println(String.valueOf(type));
         if (type == Object.class) {
-            System.out.println("object class..");
+            //System.out.println("object class..");
             // try to figure it out by looking at the first char
             // ' String, python
             // [ List
@@ -95,7 +95,9 @@ public class Main {
             return new Integer(Integer.parseInt(arg));
         } else if (type.equals(String.class)) {
             return arg;
-        } else if (type.isAssignableFrom(List.class)) {
+        } else if (type.equals(float.class)) {
+            return new Float(Float.parseFloat(arg));
+        } else if (List.class.isAssignableFrom(type)) {
             System.out.println("hit list condition");
             String[] args = arg.substring(1,arg.length()-1).split("\\s*,\\s*");
             int length = args.length;
@@ -103,6 +105,7 @@ public class Main {
 
             if ((Type) type instanceof ParameterizedType) {
                 Type[] generic_types = ((ParameterizedType) (Type) type).getActualTypeArguments();
+                System.out.println("parameter type: "+String.valueOf(generic_types));
 
                 for (int i=0; i<length; i++) {
                     String current_arg = args[i];
@@ -115,17 +118,18 @@ public class Main {
                 }
             }
 
+            //System.out.println(String.valueOf(to_return.get(1).getClass()));
             return to_return;
         } else if (type.isArray()) {
             System.out.println("hit array condition");
             String[] args = arg.substring(1,arg.length()-1).split("\\s*,\\s*");
-            System.out.println(String.valueOf(args));
+            // System.out.println(String.valueOf(args));
             int length = args.length;
             Type generic_type = type.getComponentType();
-            System.out.println("component type is "+String.valueOf(generic_type));
+            // System.out.println("component type is "+String.valueOf(generic_type));
             try {
                 generic_type = loadIt(String.valueOf(generic_type));
-                System.out.println("converted type is "+String.valueOf(generic_type));
+                // System.out.println("converted type is "+String.valueOf(generic_type));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -137,17 +141,17 @@ public class Main {
 
             for (int i=0; i < length; i++) {
                 String current_arg = args[i];
-                System.out.println("generic_type is "+String.valueOf((Class) generic_type));
-                System.out.println("current arg is "+String.valueOf((current_arg)));
-                System.out.println("parsed value is "+String.valueOf(parser((Class) generic_type, current_arg)));
-                System.out.println("parsed type is "+String.valueOf(parser((Class) generic_type, current_arg).getClass()));
+                // System.out.println("generic_type is "+String.valueOf((Class) generic_type));
+                // System.out.println("current arg is "+String.valueOf((current_arg)));
+                // System.out.println("parsed value is "+String.valueOf(parser((Class) generic_type, current_arg)));
+                // System.out.println("parsed type is "+String.valueOf(parser((Class) generic_type, current_arg).getClass()));
 
                 if (String.valueOf((Class) generic_type).equals("int")) {
-                    System.out.println("int condition");
-                    System.out.println(String.valueOf(type));
+                    // System.out.println("int condition");
+                    // System.out.println(String.valueOf(type));
                     java.lang.reflect.Array.setInt(to_return, i, (int) parser((Class) generic_type,current_arg));
                 } else {
-                    System.out.println("bypassing and trying to use Object");
+                    // System.out.println("bypassing and trying to use Object");
                     Array.set(to_return, i, (Object) parser((Class) generic_type,current_arg));
                     // I have to use the right fucking set function!!!
                 }
@@ -155,7 +159,7 @@ public class Main {
             }
             return to_return;
         } else {
-            System.out.println(String.valueOf(type));
+            // System.out.println(String.valueOf(type));
             System.out.println("passing thru");
             return arg; // do some transformation?
         }

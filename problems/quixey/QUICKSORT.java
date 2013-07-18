@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class QUICKSORT {
     public static ArrayList<Integer> quicksort(ArrayList<Integer> arr) {
-        if (!arr.isEmpty()) {
+        if (arr.isEmpty()) {
             return new ArrayList<Integer>();
         }
 
@@ -23,12 +23,14 @@ public class QUICKSORT {
         for (Integer x : arr.subList(1, arr.size())) {
             if (x < pivot) {
                 lesser.add(x);
-            } else {
+            } else if (x > pivot) {
                 greater.add(x);
             }
         }
         ArrayList<Integer> middle = new ArrayList<Integer>();
         middle.add(pivot);
+        lesser = quicksort(lesser);
+        greater = quicksort(greater);
         middle.addAll(greater);
         lesser.addAll(middle);
         return lesser;

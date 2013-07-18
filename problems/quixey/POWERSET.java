@@ -11,24 +11,26 @@ import java.util.*;
  * @author derricklin
  */
 public class POWERSET {
-    public static ArrayList<ArrayList<Character>> powerset(ArrayList<Character> arr) {
+    public static ArrayList<ArrayList> powerset(ArrayList arr) {
         if (!arr.isEmpty()) {
-            char first = arr.get(0);
+            Object first = arr.get(0);
             arr.remove(0);
-            ArrayList<Character> rest = arr;
-            ArrayList<ArrayList<Character>> rest_subsets = powerset(rest);
+            ArrayList rest = arr;
+            ArrayList<ArrayList> rest_subsets = powerset(rest);
 
-            ArrayList<ArrayList<Character>> output = new ArrayList<ArrayList<Character>>();
-            for (ArrayList<Character> subset : rest_subsets) {
-                ArrayList<Character> to_add = new ArrayList<Character>();
-                to_add.add(first);
+            ArrayList<ArrayList> output = new ArrayList<ArrayList>(100);
+            ArrayList to_add = new ArrayList(100);
+            to_add.add(first);
+            for (ArrayList subset : rest_subsets) {
                 to_add.addAll(subset);
-                output.add(to_add);
             }
+            output.add(to_add);
 
             return output;
         } else {
-            return new ArrayList<ArrayList<Character>>();
+            ArrayList empty_set = new ArrayList<ArrayList>();
+            empty_set.add(new ArrayList());
+            return empty_set;
         }
     }
 }

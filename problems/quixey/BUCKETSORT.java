@@ -12,17 +12,18 @@ import java.util.*;
  */
 public class BUCKETSORT {
     public static ArrayList<Integer> bucketsort(ArrayList<Integer> arr, int k) {
+        System.out.println(String.valueOf(k));
         ArrayList<Integer> counts = new ArrayList<Integer>(k);
         for (Integer x : arr) {
             counts.set(x,counts.get(x)+1);
         }
 
-        ArrayList<Integer> sorted_arr = new ArrayList<Integer>(0);
-        int i = 0;
+        ArrayList<Integer> sorted_arr = new ArrayList<Integer>(100);
+        Integer i = 0;
         for (Integer count : arr) {
-            ArrayList<Integer> more = new ArrayList<Integer>(count);
+            //ArrayList<Integer> more = new ArrayList<Integer>(count);
             for (Integer j=0; j<count; j++) {
-                more.add(j,i);
+                sorted_arr.add(i);
             }
             i++;
         }

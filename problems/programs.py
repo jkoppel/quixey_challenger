@@ -1,39 +1,45 @@
-#bitcount - well, infinite while loop in buggy versions, so not really
 breadth_first_search
-bucketsort
 depth_first_search
 detect_cycle
-find_first_in_sorted
-find_in_sorted
-flatten
-#gcd
-#get_factors
+flatten - still gotta figure this out
 hanoi
-#is_valid_parenthesization - original example
-kheapsort
-knapsack
-kth
+knapsack - hard input
 #lcs_length - except for one NoSuchElementException
-#levenshtein
-lis
-longest_common_subsequence
-max_sublist_sum
+longest_common_subsequence - argh, no output?
 mergesort
 minimum_spanning_tree
-next_permutation
-pascal
-possible_change
-powerset
-quicksort
+next_permutation - ...did I never write this?
+next_palindrome - oh this is from quixey, check for python version
+possible_change - not quite sure this is the same error, ValueError vs StackOverflow
 reverse_linked_list
-rpn_eval
+rpn_eval - AUGH what the hell is Stack?
 shortest_path_length
 shortest_path_lengths
 shortest_paths
-shunting_yard
-sieve
-sqrt
+shunting_yard - deal with Tokens
 subsequences
-#to_base
 topological_ordering
-wrap
+
+
+
+
+
+#bitcount - well, infinite while loop in buggy versions, so not really
+#bucketsort
+#find_first_in_sorted
+#find_in_sorted
+#gcd
+#get_factors
+#is_valid_parenthesization - original example
+#lis
+#max_sublist_sum
+#kheapsort
+#kth
+#levenshtein
+#pascal
+#powerset
+#quicksort
+#sieve
+#sqrt - well, relatively sure, both timeout
+#to_base
+#wrap
