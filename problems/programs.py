@@ -4,11 +4,8 @@ detect_cycle
 flatten - still gotta figure this out
 hanoi
 knapsack - hard input
-#lcs_length - except for one NoSuchElementException
 longest_common_subsequence - argh, no output?
-mergesort
 minimum_spanning_tree
-next_permutation - ...did I never write this?
 next_palindrome - oh this is from quixey, check for python version
 possible_change - not quite sure this is the same error, ValueError vs StackOverflow
 reverse_linked_list
@@ -33,8 +30,11 @@ topological_ordering
 #is_valid_parenthesization - original example
 #lis
 #max_sublist_sum
+#mergesort
+#next_permutation
 #kheapsort
 #kth
+#lcs_length
 #levenshtein
 #pascal
 #powerset

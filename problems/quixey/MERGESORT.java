@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class MERGESORT {
     public static ArrayList<Integer> merge(ArrayList<Integer> left, ArrayList<Integer> right) {
-        ArrayList<Integer> result = new ArrayList<Integer>();
+        ArrayList<Integer> result = new ArrayList<Integer>(100);
         int i = 0;
         int j = 0;
 
@@ -34,8 +34,13 @@ public class MERGESORT {
             return arr;
         } else {
             int middle = arr.size() / 2;
-            ArrayList<Integer> left = mergesort((ArrayList) arr.subList(0,middle));
-            ArrayList<Integer> right = mergesort((ArrayList) arr.subList(middle, arr.size()));
+            ArrayList<Integer> left = new ArrayList<Integer>(100);
+            left.addAll(arr.subList(0,middle));
+            left = mergesort(left);
+            ArrayList<Integer> right = new ArrayList<Integer>(100);
+            right.addAll(arr.subList(middle, arr.size()));
+            right = mergesort(right);
+
             return merge(left, right);
         }
     }
