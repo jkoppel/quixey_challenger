@@ -11,16 +11,18 @@ import java.util.*;
  * @author derricklin
  */
 public class SUBSEQUENCES {
-    public static ArrayList<Integer> subsequences (int a, int b, int k) {
+    public static ArrayList subsequences(int a, int b, int k) {
         if (k == 0) {
-            return new ArrayList<Integer>();
+            return new ArrayList();
         }
 
-        ArrayList<Integer> ret = new ArrayList<Integer>();
+        ArrayList ret = new ArrayList(50);
         for (int i=a; i<b+1-k; i++) {
-            ArrayList<Integer> base = new ArrayList<Integer>();
-            base.add(i);
-            for (Integer rest : subsequences(i+1, b, k-1)) {
+            ArrayList base = new ArrayList(50);
+            ArrayList initial = new ArrayList();
+            initial.add(i);
+            for (Object rest : subsequences(i+1, b, k-1)) {
+                base.add(initial);
                 base.add(rest);
             }
             ret.addAll(base);
