@@ -8,7 +8,6 @@ reverse_linked_list
 shortest_path_length
 shortest_path_lengths
 shortest_paths
-shunting_yard - deal with Tokens
 topological_ordering
 
 
@@ -38,6 +37,7 @@ topological_ordering
 #powerset
 #quicksort
 #rpn_eval
+#shunting_yard
 #sieve
 #sqrt - well, relatively sure, both timeout
 #subsequences

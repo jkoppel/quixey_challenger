@@ -11,23 +11,22 @@ import java.util.*;
  * @author derricklin
  */
 public class SHUNTING_YARD {
-    public static List<Token> shunting_yard(List<Token> tokens) {
+    public static List shunting_yard(ArrayList tokens) {
         Map<Character, Integer> precedence = new HashMap<Character, Integer>();
         precedence.put('+',1);
         precedence.put('-',1);
         precedence.put('*',2);
         precedence.put('/',2);
 
-        ArrayList<Token> rpntokens = new ArrayList<Token>();
-        Deque<Op> opstack = new ArrayDeque<Op>();
+        ArrayList rpntokens = new ArrayList(100);
+        ArrayDeque opstack = new ArrayDeque();
 
-        for (Token token: tokens) {
-            if (Value.class.isInstance(token)) {
-                rpntokens.add(token);
+        for (Object token: tokens) {
+            if (Integer.class.isInstance(token)) {
+                rpntokens.add((Integer) token);
             } else {
-                Op operator = (Op) token;
-                char op = operator.op;
-                while (!opstack.isEmpty() && precedence.get(op) <= precedence.get(opstack.getLast().getOp())) {
+                Character operator = (Character) token;
+                while (!opstack.isEmpty() && precedence.get(operator) <= precedence.get(opstack.getLast())) {
                     rpntokens.add(opstack.pop());
                 }
             }
@@ -40,20 +39,4 @@ public class SHUNTING_YARD {
         return rpntokens;
     }
 
-
-
-
-    public static class Token {}
-    public static class Op extends Token {
-        char op;
-        public char getOp() {
-            return op;
-        }
-    }
-    public static class Value extends Token {
-        int value;
-        public Value(int val) {
-            value = val;
-        }
-    }
 }
