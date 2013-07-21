@@ -12,39 +12,28 @@ import java.util.*;
  */
 public class RPN_EVAL {
 
-    public static Value rpn_eval(List<Token> tokens) {
-        Stack<Value> stack = new Stack<Value>();
+    public static Double rpn_eval(ArrayList tokens) {
+        Stack stack = new Stack();
 
-        for (Token token : tokens) {
-            if (Value.class.isInstance(token)) {
-                stack.push((Value) token);
-            } else if (Op.class.isInstance(token)) {
-                Op operator = (Op) token;
-                char op = operator.op;
-                Double a = stack.pop().value;
-                Double b = stack.pop().value;
+        for (Object token : tokens) {
+            if (Double.class.isInstance(token)) {
+                stack.push((Double) token);
+            } else if (Character.class.isInstance(token)) {
+                Character op = (Character) token;
+                Double a = (Double) stack.pop();
+                Double b = (Double) stack.pop();
                 if (op == '+') {
-                    stack.push(new Value(a+b));
+                    stack.push(a+b);
                 } else if (op == '-') {
-                    stack.push(new Value(a-b));
+                    stack.push(a-b);
                 } else if (op == '*') {
-                    stack.push(new Value(a*b));
+                    stack.push(a*b);
                 } else if (op == '/') {
-                    stack.push(new Value(a/b));
+                    stack.push(a/b);
                 }
             }
         }
 
-        return stack.pop();
-    }
-    public static class Token {}
-    public static class Op extends Token {
-        char op;
-    }
-    public static class Value extends Token {
-        double value;
-        public Value(double val) {
-            value = val;
-        }
+        return (Double) stack.pop();
     }
 }
