@@ -1,13 +1,15 @@
 # make classes for extra classes and then just parse them in
 # make version for proper programs
 
+import copy
 import sys
 import subprocess
 import types
 
 def py_try(name,flag,*args):
     # import from within a folder?
-    if flag == True:
+    # print args
+    if flag:
         module = __import__("python."+name+"GOOD")
         fx = getattr(module, name+"GOOD")
     else:
@@ -15,19 +17,23 @@ def py_try(name,flag,*args):
         fx = getattr(module, name)
 
     try:
-        return eval("fx."+name+"(*args)")
+        return getattr(fx,name)(*args)
     except:
         return sys.exc_info()
 
 
 def check(name,*args):
-    py_out_good = py_try(name,True,*args)
+    args1 = copy.deepcopy(args)
+    args2 = copy.deepcopy(args)
+    py_out_good = py_try(name,True,*args1)
+    # print "after: "+str(args)
     if isinstance(py_out_good,types.GeneratorType):
         print("Correct: (generator) " + str(list(py_out_good)))
     else:
         print("Correct: " + str(py_out_good))
 
-    py_out_test = py_try(name,False,*args)
+    py_out_test = py_try(name,False,*args2)
+    # print "after: "+str(args)
     if isinstance(py_out_test,types.GeneratorType):
         print("Python: (generator) " + str(list(py_out_test)))
     else:
@@ -55,10 +61,6 @@ for line in working_file:
 
     check(name,*argt)
 
-# str_args = sys.argv[2:]
-# argt = []
-# for arg in str_args:
-#     argt.append(eval(arg))
 
 
 

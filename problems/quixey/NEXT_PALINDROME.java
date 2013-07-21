@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class NEXT_PALINDROME {
     public static String next_palindrome(int[] digit_list) {
-        System.out.println(Arrays.toString(digit_list));
+        //System.out.println(Arrays.toString(digit_list));
         int high_mid = digit_list.length / 2;
         int low_mid = (digit_list.length - 1) / 2;
 
@@ -32,7 +32,7 @@ public class NEXT_PALINDROME {
 
         int[] otherwise = new int[digit_list.length+2];
         for (int i=0; i<digit_list.length+2; i++) {
-            if (i == 0 || i == digit_list.length+2) {
+            if (i == 0 || i == digit_list.length+1) {
                 otherwise[i] = 1;
             } else {
                 otherwise[i] = 0;
