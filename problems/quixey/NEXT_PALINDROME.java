@@ -10,7 +10,8 @@ import java.util.*;
  * @author derricklin
  */
 public class NEXT_PALINDROME {
-    public static int[] next_palindrome(int[] digit_list) {
+    public static String next_palindrome(int[] digit_list) {
+        System.out.println(Arrays.toString(digit_list));
         int high_mid = digit_list.length / 2;
         int low_mid = (digit_list.length - 1) / 2;
 
@@ -25,7 +26,7 @@ public class NEXT_PALINDROME {
                 if (low_mid != high_mid) {
                     digit_list[low_mid] += 1;
                 }
-                return digit_list;
+                return Arrays.toString(digit_list);
             }
         }
 
@@ -37,6 +38,6 @@ public class NEXT_PALINDROME {
                 otherwise[i] = 0;
             }
         }
-        return otherwise;
+        return Arrays.toString(otherwise);
     }
 }

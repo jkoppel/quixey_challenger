@@ -22,5 +22,7 @@ Precondition:
     cols > 0.
 
 Output:
-    An ordered list of strings, each no longer than the column width, such that the concatenation of the strings returns the original text, and such that no word in the original text is broken into two parts unless necessary.  The original amount of spaces are preserved (e.g. spaces at the start or end of each line aren't trimmed.),Wrapping Text
+    An ordered list of strings, each no longer than the column width, such that the concatenation of the strings returns the original text,
+and such that no word in the original text is broken into two parts unless necessary.  The original amount of spaces are preserved (e.g. spaces
+at the start or end of each line aren't trimmed.),Wrapping Text
 """

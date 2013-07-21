@@ -21,8 +21,8 @@ public class SUBSEQUENCES {
             ArrayList base = new ArrayList(50);
             ArrayList initial = new ArrayList();
             initial.add(i);
+            base.add(initial);
             for (Object rest : subsequences(i+1, b, k-1)) {
-                base.add(initial);
                 base.add(rest);
             }
             ret.addAll(base);
