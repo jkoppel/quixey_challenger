@@ -19,7 +19,7 @@ public class POSSIBLE_CHANGE {
         }
 
         int first = coins[0];
-        int[] rest = Arrays.copyOfRange(coins, 1, coins.length+1);
+        int[] rest = Arrays.copyOfRange(coins, 1, coins.length);
         return possible_change(coins, total-first) + possible_change(rest, total);
     }
 }
