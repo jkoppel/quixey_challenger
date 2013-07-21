@@ -4,9 +4,7 @@ detect_cycle
 hanoi
 knapsack - hard input
 minimum_spanning_tree
-possible_change - not quite sure this is the same error, ValueError vs StackOverflow
 reverse_linked_list
-rpn_eval - AUGH what the hell is Stack?
 shortest_path_length
 shortest_path_lengths
 shortest_paths
@@ -36,8 +34,10 @@ topological_ordering
 #next_permutation
 #next_palindrome
 #pascal
+#possible_change
 #powerset
 #quicksort
+#rpn_eval
 #sieve
 #sqrt - well, relatively sure, both timeout
 #subsequences
