@@ -8,15 +8,15 @@ def rpn_eval(tokens):
             '/': lambda a, b: a / b
         }[symbol](a, b)
 
-    stack = Stack()
+    stack = []
 
     for token in tokens:
         if isinstance(token, float):
-            stack.push(token)
+            stack.append(token)
         else:
             a = stack.pop()
             b = stack.pop()
-            stack.push(
+            stack.append(
                 op(token, a, b)
             )
 

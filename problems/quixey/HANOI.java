@@ -56,5 +56,10 @@ public class HANOI {
         public S getSecond() {
             return second;
         }
+
+        @Override
+        public String toString() {
+            return "(" + String.valueOf(first) + ", " + String.valueOf(second) + ")";
+        }
     }
 }
