@@ -66,7 +66,7 @@ public class Main {
     }
 
     public static Object parser(Class type, String arg) {
-        System.out.println(String.valueOf(type));
+        //System.out.println(String.valueOf(type));
         if (type == Object.class) {
             //System.out.println("object class..");
             // try to figure it out by looking at the first char
@@ -75,9 +75,16 @@ public class Main {
             // integer, etc
             char firstchar = arg.charAt(0);
             if (firstchar == '\'') {
+                if (arg.length() == 3 && arg.charAt(2) == '\'') {
+                    return arg.charAt(1);
+                }
                 return arg.substring(1,arg.length()-1);
             } else if ("0123456789".indexOf(firstchar) != -1) {
+                if (arg.indexOf('.') != -1) {
+                    return new Double(Double.parseDouble(arg));
+                } else {
                 return new Integer(Integer.parseInt(arg));
+                }
             } else if (arg.charAt(0)=='[') {
                 // list
                 String[] args = arg.substring(1,arg.length()-1).split("\\s*,\\s*");
@@ -97,6 +104,8 @@ public class Main {
             return arg;
         } else if (type.equals(float.class)) {
             return new Float(Float.parseFloat(arg));
+        } else if (type.equals(double.class)) {
+            return new Double(Double.parseDouble(arg));
         } else if (List.class.isAssignableFrom(type)) {
             System.out.println("hit list condition");
             String[] args = arg.substring(1,arg.length()-1).split("\\s*,\\s*");

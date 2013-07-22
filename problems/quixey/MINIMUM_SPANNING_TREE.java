@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class MINIMUM_SPANNING_TREE {
     public static Set<Pair<Node,Node>> minimum_spanning_tree(Map<Pair<Node,Node>,Integer> weight_by_edge) {
-        HashMap<> group_by_node = new HashMap<>();
+        HashMap group_by_node = new HashMap();
         Set<Pair<Node,Node>> mst_edges = new HashSet<Pair<Node,Node>>();
 
         // setdefault returns val if key in dict, otherwise insert key with default and return default val
@@ -102,6 +102,11 @@ public class MINIMUM_SPANNING_TREE {
 
         public S getSecond() {
             return second;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + String.valueOf(first) + ", " + String.valueOf(second) + ")";
         }
     }
 }

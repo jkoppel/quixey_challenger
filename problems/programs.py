@@ -1,7 +1,6 @@
 breadth_first_search
 depth_first_search
 detect_cycle
-hanoi
 knapsack - hard input
 minimum_spanning_tree
 reverse_linked_list
@@ -21,6 +20,7 @@ topological_ordering
 #find_in_sorted
 #gcd
 #get_factors
+#hanoi
 #is_valid_parenthesization - original example
 #kheapsort
 #kth
