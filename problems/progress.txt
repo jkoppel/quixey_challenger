@@ -1,37 +1,46 @@
 Total: 40 Python programs, given by Quixey, in correct and incorrect versions
 Java is missing is_valid_parenthesization and topological_ordering
+Java ObjectOutputStream is the standard data interchange format in java for object representation
+should be hard. Jython? or cross-platform serialization such as Thrift, Protocol Buffers, JSON, XML
+read with Jython, reserialize with pickle (for reading from Python)
+some algorithms require other objects to exist in the environment/namespace
+how to refer to such other objects?
+package to import
+Python 3 or not?
+
+Complete:
+bitcount: infinite while loop in buggy versions
+gcd: looks fine, recursion depth exceeded / stackoverflow
+get_factors: fine
+hanoi: fine
+longest_common_subsequence: fine
+lcs_length: fine
+levenshtein: fine, large example?
+pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
+sieve: fine
+subsequences: Java compiler warnings, though works fine
+to_base: fine
+wrap: fine
 
 Worked:
-bitcount: infinite while loop in buggy versions
 bucketsort: Java argument type mismatch
 flatten: Java argument type mismatch, will not compile in java, static typechecking, recursion. List<Object>?
 find_first_in_sorted: Java argument type mismatch
 find_in_sorted: Java argument type mismatch
-gcd: looks fine, recursion depth exceeded / stackoverflow
-get_factors: fine
-hanoi: fine
 is_valid_parenthesization: Java version missing, original example
 kheapsort: Java argument type mismatch
 kth: Java argument type mismatch
-longest_common_subsequence: fine
-lcs_length: fine
-levenshtein: fine, large example?
 lis: Java argument type mismatch
 max_sublist_sum: Java argument type mismatch
 mergesort: Java argument type mismatch
 next_permutation: Java argument type mismatch
 next_palindrome: Java argument type mismatch
-pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
 possible_change: Python3 usage, could convert (which is better?) use first, rest = l[0], l[1:] for py2
 powerset: Py3 same issue
 quicksort: Java argument type mismatch
 rpn_eval: Java argument type mismatch
-shunting_yard: Java not compiling, complains about unchecked or unsafe operations
-sieve: fine
+shunting_yard: Java argument type mismatch, complains about unchecked or unsafe operations
 sqrt: Java argument type mismatch. Also, both incorrect versions timeout
-subsequences: Java program is not isomorphic
-to_base: fine
-wrap: fine
 
 
 
