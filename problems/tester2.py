@@ -36,6 +36,7 @@ if __name__ == "__main__":
         test_in, test_out = py_testcase
         if not isinstance(test_in, list):
             # input is required to be a list, as multiparameter algos need to deconstruct a list of parameters
+            # should fix in testcases, force all inputs to be list of inputs
             test_in = [test_in]
             # unsure how to make immutable; previous versions just used copy.deepcopy
 
