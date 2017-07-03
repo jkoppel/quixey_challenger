@@ -1,7 +1,7 @@
 import java.util.*;
 import java.lang.reflect.*;
 import java_programs.*;
-import javalibs.gson;
+import javalibs.gson.*;
 /*
  */
 
@@ -17,44 +17,37 @@ public class Main {
         // .class?
         // getMethod, getDeclaredMethod, getDeclaredMethods, getMethods
         String sMethodName = args[0];
-        String[] input_args = Arrays.copyOfRange(args, 1, args.length);
+        JsonParser parser = new JsonParser();
+        JsonArray input_args = parser.parse(Arrays.copyOfRange(args, 1, args.length));
+	// soooo how is this read in exactly? or rather, how is Python passing this?
+	// should pass it as raw json string, right?
         String sClassName = sMethodName.toUpperCase();
-        // System.out.println(input_args[0]);
 
         try {
             Class target_class = Class.forName("java_programs."+sClassName);
-            Method[] classMethods = target_class.getDeclaredMethods();
-            for (Method m : classMethods) {
-                if (m.getName().equals(sMethodName)) {
-                    Type[] types = m.getGenericParameterTypes();
-                    int length = input_args.length;
-                    Object[] obj_args = new Object[length];
+            Method method = target_class.getDeclaredMethod(sMethodName);
+            Type[] types = method.getGenericParameterTypes();
 
-                    for (int i=0; i<length; i++) {
-                        Type type = types[i];
-                        String arg = input_args[i];
+            Object[] obj_args = new Object[types.length];
 
-                        if (type instanceof ParameterizedType) {
-                            type = ((ParameterizedType) type).getRawType();
-                        };
-                        obj_args[i] = parser((Class) type, arg);
-                    }
+            for (int i=0; i<types.length; i++) {
+                Type type = types[i];
+                obj_args[i] = gson.fromJson(input_args.get(i), (Class) type);
+	    }
 
-                    // System.out.println(String.valueOf(obj_args));
+	    System.out.println(String.valueOf(obj_args));
 
 
-                    String returnValue = String.valueOf(m.invoke(null, obj_args));
-                    // If the underlying method is static, then the specified obj argument is ignored. It may be null.
-                    // If the number of formal parameters required by the underlying method is 0, the supplied args array may be of length 0 or null.
-                    // If the underlying method is static, the class that declared the method is initialized if it has not already been initialized.
-                    // If the method completes normally, the value it returns is returned to the caller of invoke; if the value has a primitive type,
-                    // it is first appropriately wrapped in an object. However, if the value has the type of an array of a primitive type, the elements
-                    // of the array are not wrapped in objects; in other words, an array of primitive type is returned. If the underlying method return
-                    // type is void, the invocation returns null.
+	    String returnValue = String.valueOf(m.invoke(null, obj_args));
+	    // If the underlying method is static, then the specified obj argument is ignored. It may be null.
+	    // If the number of formal parameters required by the underlying method is 0, the supplied args array may be of length 0 or null.
+	    // If the underlying method is static, the class that declared the method is initialized if it has not already been initialized.
+	    // If the method completes normally, the value it returns is returned to the caller of invoke; if the value has a primitive type,
+	    // it is first appropriately wrapped in an object. However, if the value has the type of an array of a primitive type, the elements
+	    // of the array are not wrapped in objects; in other words, an array of primitive type is returned. If the underlying method return
+	    // type is void, the invocation returns null.
 
-                    System.out.println(returnValue);
-                }
-            }
+	    System.out.println(returnValue);
 
         } catch (ClassNotFoundException e) {
             System.out.println("aww");
