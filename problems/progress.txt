@@ -11,6 +11,8 @@ longest_common_subsequence: fine
 lcs_length: fine
 levenshtein: fine, large example?
 pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
+possible_change: fine
+powerset: fine
 sieve: fine
 subsequences: Java compiler warnings, though works fine
 to_base: fine
@@ -29,8 +31,6 @@ max_sublist_sum: Java argument type mismatch
 mergesort: Java argument type mismatch
 next_permutation: Java argument type mismatch
 next_palindrome: Java argument type mismatch
-possible_change: Python3 usage, could convert (which is better?) use first, rest = l[0], l[1:] for py2
-powerset: Py3 same issue
 quicksort: Java argument type mismatch
 rpn_eval: Java argument type mismatch
 shunting_yard: Java argument type mismatch, complains about unchecked or unsafe operations
