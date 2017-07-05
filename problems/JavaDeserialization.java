@@ -62,8 +62,8 @@ public class JavaDeserialization {
             if (numOfParameters == args.length - 1) {
                 for (int i = 0; i < numOfParameters; i++) {
                     Type type = types[i];
-                    System.out.println(type);
-                    System.out.println(args[i+1]);
+                    // System.out.println(type);
+                    // System.out.println(args[i+1]);
                     parameters[i] = gsonArguments.fromJson(args[i + 1], (Class)type);
                 }
             }
