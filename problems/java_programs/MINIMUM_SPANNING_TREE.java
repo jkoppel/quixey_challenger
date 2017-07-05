@@ -1,4 +1,4 @@
-package quixey;
+package java_programs;
 import java.util.*;
 
 /*
@@ -11,7 +11,7 @@ import java.util.*;
  * @author derricklin
  */
 public class MINIMUM_SPANNING_TREE {
-    public static Set<Pair<Node,Node>> minimum_spanning_tree(Map<Pair<Node,Node>,Integer> weight_by_edge) {
+    public static Set<Pair<Node,Node>> minimum_spanning_tree(Map<Pair<Node,Node>, int> weight_by_edge) {
         HashMap group_by_node = new HashMap();
         Set<Pair<Node,Node>> mst_edges = new HashSet<Pair<Node,Node>>();
 

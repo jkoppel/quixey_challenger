@@ -1,4 +1,4 @@
-package quixey;
+package java_programs;
 import java.util.*;
 
 /*
@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class FIND_FIRST_IN_SORTED {
 
-    public static Integer find_first_in_sorted(int[] arr, int x) {
+    public static int find_first_in_sorted(int[] arr, int x) {
         int lo = 0;
         int hi = arr.length;
 
