@@ -1,12 +1,6 @@
 Total: 40 Python programs, given by Quixey, in correct and incorrect versions
 Java is missing is_valid_parenthesization and topological_ordering
-Java ObjectOutputStream is the standard data interchange format in java for object representation
-should be hard. Jython? or cross-platform serialization such as Thrift, Protocol Buffers, JSON, XML
-read with Jython, reserialize with pickle (for reading from Python)
 some algorithms require other objects to exist in the environment/namespace
-how to refer to such other objects?
-package to import
-Python 3 or not?
 
 Complete:
 bitcount: infinite while loop in buggy versions
