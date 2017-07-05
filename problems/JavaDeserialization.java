@@ -12,7 +12,7 @@ import java_programs.*;
 
 import com.google.gson.Gson;
 
-public class JavaSerialization {
+public class JavaDeserialization {
     public static void main(String[] args) throws Exception {
 
         // Check if passing in proper arguments.
