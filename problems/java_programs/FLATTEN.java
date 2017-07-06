@@ -10,11 +10,12 @@ import java.util.*;
  * @author derricklin
  */
 public class FLATTEN {
-    public static ArrayList flatten(ArrayList arr) {
+    public static ArrayList flatten(Object arr) {
+	ArrayList narr = (ArrayList) arr;
         ArrayList result = new ArrayList(50);
-        for (Object x : arr) {
+        for (Object x : narr) {
             if (x instanceof ArrayList) {
-                for (Object y : flatten(x)) {
+                for (Object y : flatten((ArrayList) x)) {
                     result.add(y);
                 }
             } else {
