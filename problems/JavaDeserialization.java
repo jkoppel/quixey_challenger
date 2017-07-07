@@ -35,7 +35,7 @@ public class JavaDeserialization {
                     continue;
                 }
 
-                Type[] types = m.getGenericParameterTypes();
+                Type[] types = m.getParameterTypes();
                 Object[] parameters = getParameters(types, args);
 
                 try {
@@ -55,7 +55,7 @@ public class JavaDeserialization {
 
     // Create list of objects corresponding to input arguments through deserialization
     public static Object[] getParameters(Type[] types,  String[] args){
-        int numOfParameters= types.length;
+        int numOfParameters = types.length;
         Object[] parameters = new Object[numOfParameters];
         Gson gsonArguments = new Gson();
         try {
