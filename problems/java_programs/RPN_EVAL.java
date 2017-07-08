@@ -13,6 +13,13 @@ import java.util.*;
 public class RPN_EVAL {
 
     public static Double rpn_eval(ArrayList tokens) {
+	Map<String, Runnable> op = new HashMap<>();
+	op.put("+", (a, b) -> a + b); 
+	op.put("-", (a, b) -> a - b); 
+	op.put("*", (a, b) -> a * b); 
+	op.put("/", (a, b) -> a / b); 
+	
+
         Stack stack = new Stack();
 
         for (Object token : tokens) {
@@ -23,15 +30,16 @@ public class RPN_EVAL {
                 Double a = (Double) stack.pop();
                 Double b = (Double) stack.pop();
 		Double c = 0.0;
-                if (op.equals("+")) {
-		    c = a + b;
-                } else if (op.equals("-")) {
-		    c = a - b;
-                } else if (op.equals("*")) {
-		    c = a * b;
-                } else if (op.equals("/")) {
-		    c = a / b;
-                }
+                //if (op.equals("+")) {
+		//    c = a + b;
+                //} else if (op.equals("-")) {
+		//    c = a - b;
+                //} else if (op.equals("*")) {
+		//    c = a * b;
+                //} else if (op.equals("/")) {
+		//    c = a / b;
+                //}
+		c = op.get(token).run(a,b);
                 stack.push(c);
             }
         }

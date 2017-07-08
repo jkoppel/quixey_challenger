@@ -18,31 +18,31 @@ find_in_sorted: fine
 gcd: looks fine, recursion depth exceeded / stackoverflow
 get_factors: fine
 hanoi: fine
+kheapsort: fine
+kth: fine
 lis: fine
 longest_common_subsequence: fine
 lcs_length: fine Malforned Json Exception, Null Pointer Exception
 levenshtein: fine, large example? Null Pointer Exception
 max_sublist_sum: fine
-mergesort: fine, but check if it always a recursionerror
 next_palindrome: fine
+next_permutation: fine
 pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
 possible_change: fine
 powerset: fine
+quicksort: fine
+rpn_eval: runs fine now, but how to get lambdas to work? would be nice to have fix be on one line
+shunting_yard: fine
 sieve: fine
 sqrt: fine
-subsequences: Java compiler warnings, though works fine
+subsequences: fine
 to_base: fine
 wrap: fine Malformed Json Exception
 
 Worked:
-bucketsort: Java argument type mismatch
+bucketsort: Double to Int
 is_valid_parenthesization: Java version missing, original example
-kheapsort: Double cannot be cast to Integer
-kth: Double cannot be cast to Integer
-next_permutation: ""
-quicksort: ""
-rpn_eval: bad programs don't match
-shunting_yard: Double -> Integer :(
+mergesort: doesn't give same output as good version when fixed
 
 
 
