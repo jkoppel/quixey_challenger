@@ -11,6 +11,9 @@ import java.lang.reflect.Type;
 import java_programs.*;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonElement;
 
 public class JavaDeserialization {
     public static void main(String[] args) throws Exception {
@@ -62,10 +65,28 @@ public class JavaDeserialization {
             if (numOfParameters == args.length - 1) {
                 for (int i = 0; i < numOfParameters; i++) {
                     Type type = types[i];
-                    // System.out.println(type);
-                    // System.out.println(args[i+1]);
                     parameters[i] = gsonArguments.fromJson(args[i + 1], (Class)type);
-                }
+		    if (type.getTypeName().equals("java.util.ArrayList")) {
+			JsonParser parser = new JsonParser();
+			JsonArray array = parser.parse(args[i + 1]).getAsJsonArray();
+
+			ArrayList checked_arr = new ArrayList();
+			for (int j = 0; j < array.size(); j++) {
+			    JsonElement elem = array.get(j);
+			    String str_elem = elem.getAsString();
+			    if (str_elem.matches("[0-9]+")) {
+			    	checked_arr.add((Integer) elem.getAsInt());
+			    } else if (str_elem.matches("[0-9]+.[0-9]+")) {
+				checked_arr.add(elem.getAsDouble());
+			    } else {
+				checked_arr.add(str_elem);
+			    }
+			}
+			parameters[i] = checked_arr;
+		    } else {
+                    	parameters[i] = gsonArguments.fromJson(args[i + 1], (Class)type);
+		    }
+		}
             }
 
         } catch (NumberFormatException e){
