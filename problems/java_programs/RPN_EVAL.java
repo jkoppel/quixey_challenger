@@ -18,19 +18,21 @@ public class RPN_EVAL {
         for (Object token : tokens) {
             if (Double.class.isInstance(token)) {
                 stack.push((Double) token);
-            } else if (Character.class.isInstance(token)) {
-                Character op = (Character) token;
+            } else {
+                String op = (String) token;
                 Double a = (Double) stack.pop();
                 Double b = (Double) stack.pop();
-                if (op == '+') {
-                    stack.push(a+b);
-                } else if (op == '-') {
-                    stack.push(a-b);
-                } else if (op == '*') {
-                    stack.push(a*b);
-                } else if (op == '/') {
-                    stack.push(a/b);
+		Double c = 0.0;
+                if (op.equals("+")) {
+		    c = a + b;
+                } else if (op.equals("-")) {
+		    c = a - b;
+                } else if (op.equals("*")) {
+		    c = a * b;
+                } else if (op.equals("/")) {
+		    c = a / b;
                 }
+                stack.push(c);
             }
         }
 
