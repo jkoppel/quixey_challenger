@@ -6,14 +6,13 @@ Java has type erasure, so you can't actually get the generic types
 Need to find either a workaround or create a hashmap declaring types to use
 Since your method argument is a parameterized collection type, getGenericParameterTypes returns a ParameterizedType, not a Type. To get the actual type, you need to first check whether each element of argTypes is an instance of ParameterizedType, and if it is call ParameterizedType.getActualTypeArguments().
 TypeTools?
-Flatten :(
 Malformed Json Exception has to do with Strings, I think?
 
 
 Complete:
 bitcount: infinite while loop in buggy versions
 bucketsort: fine
-flatten: Java argument type mismatch, will not compile in java, static typechecking, recursion. List<Object>?  It SHOULDN'T COMPILE, that's the bug!!!!!! Double or String cannot be cast to ArrayList
+flatten: compiles fine, but Java lacks generators and so buggy version gives same output :(
 find_first_in_sorted: fine
 find_in_sorted: fine
 gcd: looks fine, recursion depth exceeded / stackoverflow
