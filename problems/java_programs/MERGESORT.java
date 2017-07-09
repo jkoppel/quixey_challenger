@@ -30,13 +30,12 @@ public class MERGESORT {
                 j++;
             }
         }
-        result.addAll(left.subList(1,left.size()).isEmpty() ? right.subList(1, right.size()) : left.subList(1, left.size()));
+        result.addAll(left.subList(i,left.size()).isEmpty() ? right.subList(j, right.size()) : left.subList(i, left.size()));
         return result;
     }
 
     public static ArrayList<Integer> mergesort(ArrayList<Integer> arr) {
-	for (Integer elem : arr) { System.out.println(elem); }
-        if (arr.size() <= 1) { // == 0 in buggy version
+        if (arr.size() == 0) { // <= 1 in correct version
             return arr;
         } else {
             int middle = arr.size() / 2;
