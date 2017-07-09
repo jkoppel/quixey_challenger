@@ -12,6 +12,7 @@ Malformed Json Exception has to do with Strings, I think?
 
 Complete:
 bitcount: infinite while loop in buggy versions
+bucketsort: fine
 flatten: Java argument type mismatch, will not compile in java, static typechecking, recursion. List<Object>?  It SHOULDN'T COMPILE, that's the bug!!!!!! Double or String cannot be cast to ArrayList
 find_first_in_sorted: fine
 find_in_sorted: fine
@@ -25,6 +26,7 @@ longest_common_subsequence: fine
 lcs_length: fine Malforned Json Exception, Null Pointer Exception
 levenshtein: fine, large example? Null Pointer Exception
 max_sublist_sum: fine
+mergesort: fine
 next_palindrome: fine
 next_permutation: fine
 pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
@@ -40,9 +42,7 @@ to_base: fine
 wrap: fine Malformed Json Exception
 
 Worked:
-bucketsort: Double to Int
 is_valid_parenthesization: Java version missing, original example
-mergesort: doesn't give same output as good version when fixed
 
 
 
