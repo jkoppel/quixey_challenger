@@ -23,8 +23,8 @@ kheapsort: fine
 kth: fine
 lis: fine
 longest_common_subsequence: fine
-lcs_length: fine Malforned Json Exception, Null Pointer Exception
-levenshtein: fine, large example? Null Pointer Exception
+lcs_length: fine
+levenshtein: fine
 max_sublist_sum: fine
 mergesort: fine
 next_palindrome: fine
@@ -39,7 +39,7 @@ sieve: fine
 sqrt: fine
 subsequences: fine
 to_base: fine
-wrap: fine Malformed Json Exception
+wrap: fine
 
 Worked:
 is_valid_parenthesization: Java version missing, original example

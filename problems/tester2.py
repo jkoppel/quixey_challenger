@@ -51,7 +51,7 @@ if __name__ == "__main__":
         # check bad Java version
         try:
             p1 = subprocess.Popen(["/usr/bin/java", "JavaDeserialization", algo]+ \
-                                [str(arg) for arg in test_in], stdout=subprocess.PIPE)
+                                [json.dumps(arg) for arg in test_in], stdout=subprocess.PIPE)
             java_out = p1.stdout.read()
             print("Bad Java:   " + prettyprint(java_out)[2:-3])
         except:
