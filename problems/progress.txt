@@ -18,6 +18,7 @@ find_in_sorted: fine
 gcd: looks fine, recursion depth exceeded / stackoverflow
 get_factors: fine
 hanoi: fine
+is_valid_parenthesization: fine, could use more testcases
 kheapsort: fine
 kth: fine
 lis: fine
@@ -41,7 +42,6 @@ to_base: fine
 wrap: fine
 
 Worked:
-is_valid_parenthesization: Java version missing, original example
 
 
 
