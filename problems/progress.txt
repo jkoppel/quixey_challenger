@@ -29,11 +29,11 @@ max_sublist_sum: fine
 mergesort: fine
 next_palindrome: fine
 next_permutation: fine
-pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
+pascal: fine
 possible_change: fine
 powerset: fine
 quicksort: fine
-rpn_eval: runs fine now, but how to get lambdas to work? would be nice to have fix be on one line
+rpn_eval: fine
 shunting_yard: fine
 sieve: fine
 sqrt: fine
