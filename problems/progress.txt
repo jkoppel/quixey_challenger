@@ -1,46 +1,47 @@
 Total: 40 Python programs, given by Quixey, in correct and incorrect versions
 Java is missing is_valid_parenthesization and topological_ordering
-Java ObjectOutputStream is the standard data interchange format in java for object representation
-should be hard. Jython? or cross-platform serialization such as Thrift, Protocol Buffers, JSON, XML
-read with Jython, reserialize with pickle (for reading from Python)
 some algorithms require other objects to exist in the environment/namespace
-how to refer to such other objects?
-package to import
-Python 3 or not?
+how can I reference Nodes programmatically?
+Java has type erasure, so you can't actually get the generic types
+Need to find either a workaround or create a hashmap declaring types to use
+Since your method argument is a parameterized collection type, getGenericParameterTypes returns a ParameterizedType, not a Type. To get the actual type, you need to first check whether each element of argTypes is an instance of ParameterizedType, and if it is call ParameterizedType.getActualTypeArguments().
+TypeTools?
+Malformed Json Exception has to do with Strings, I think?
+
 
 Complete:
 bitcount: infinite while loop in buggy versions
+bucketsort: fine
+flatten: compiles fine, but Java lacks generators and so buggy version gives same output :(
+find_first_in_sorted: fine
+find_in_sorted: fine
 gcd: looks fine, recursion depth exceeded / stackoverflow
 get_factors: fine
 hanoi: fine
+is_valid_parenthesization: fine, could use more testcases
+kheapsort: fine
+kth: fine
+lis: fine
 longest_common_subsequence: fine
 lcs_length: fine
-levenshtein: fine, large example?
-pascal: might be correct, InvocationTargetException (caused by IndexOutOfBoundsException, compare to IndexError)
+levenshtein: fine
+max_sublist_sum: fine
+mergesort: fine
+next_palindrome: fine
+next_permutation: fine
+pascal: fine
+possible_change: fine
+powerset: fine
+quicksort: fine
+rpn_eval: fine
+shunting_yard: fine
 sieve: fine
-subsequences: Java compiler warnings, though works fine
+sqrt: fine
+subsequences: fine
 to_base: fine
 wrap: fine
 
 Worked:
-bucketsort: Java argument type mismatch
-flatten: Java argument type mismatch, will not compile in java, static typechecking, recursion. List<Object>?
-find_first_in_sorted: Java argument type mismatch
-find_in_sorted: Java argument type mismatch
-is_valid_parenthesization: Java version missing, original example
-kheapsort: Java argument type mismatch
-kth: Java argument type mismatch
-lis: Java argument type mismatch
-max_sublist_sum: Java argument type mismatch
-mergesort: Java argument type mismatch
-next_permutation: Java argument type mismatch
-next_palindrome: Java argument type mismatch
-possible_change: Python3 usage, could convert (which is better?) use first, rest = l[0], l[1:] for py2
-powerset: Py3 same issue
-quicksort: Java argument type mismatch
-rpn_eval: Java argument type mismatch
-shunting_yard: Java argument type mismatch, complains about unchecked or unsafe operations
-sqrt: Java argument type mismatch. Also, both incorrect versions timeout
 
 
 
