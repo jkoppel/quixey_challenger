@@ -11,24 +11,15 @@ import java.util.*;
  * @author derricklin
  */
 public class REVERSE_LINKED_LIST {
-    public static Object reverse_linked_list(Node node) {
+    public static Node reverse_linked_list(Node node) {
         Node prevnode = null;
         Node nextnode;
         while (node != null) {
-            nextnode = node.successor();
-            node.successorSetter(prevnode);
+            nextnode = node.getSuccessor();
+            node.setSuccessor(prevnode);
+            prevnode = node;
             node = nextnode;
         }
         return prevnode;
-    }
-
-    public static class Node {
-        Node successor;
-        public Node successor() {
-            return successor;
-        }
-        public void successorSetter(Node newnode) {
-            successor = newnode;
-        }
     }
 }
