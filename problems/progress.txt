@@ -2,11 +2,12 @@ Total: 40 Python programs, given by Quixey, in correct and incorrect versions
 Java is missing is_valid_parenthesization and topological_ordering
 some algorithms require other objects to exist in the environment/namespace
 how can I reference Nodes programmatically?
-Java has type erasure, so you can't actually get the generic types
-Need to find either a workaround or create a hashmap declaring types to use
-Since your method argument is a parameterized collection type, getGenericParameterTypes returns a ParameterizedType, not a Type. To get the actual type, you need to first check whether each element of argTypes is an instance of ParameterizedType, and if it is call ParameterizedType.getActualTypeArguments().
-TypeTools?
-Malformed Json Exception has to do with Strings, I think?
+
+Notes:
+JSON only has Number. The JavaDeserializer has a workaround for Integers.
+This restricts us to using Integers, Floats, and Strings in the JSON testcases.
+JSON strings must use doublequotes, otherwise GSON throws MalformedJsonExceptions.
+Unfortunately Python treats single and double quotes identically, and outputs with single quotes. Thus we use reenconding into (compact) JSON.
 
 
 Complete:

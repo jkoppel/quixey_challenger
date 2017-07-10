@@ -67,6 +67,8 @@ public class JavaDeserialization {
                     Type type = types[i];
                     parameters[i] = gsonArguments.fromJson(args[i + 1], (Class)type);
 		    if (type.getTypeName().equals("java.util.ArrayList")) {
+			// workaround for reading in Integers and Doubles differently
+			// default is to read all Numbers as Doubles
 			JsonParser parser = new JsonParser();
 			JsonArray array = parser.parse(args[i + 1]).getAsJsonArray();
 
