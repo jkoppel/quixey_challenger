@@ -5,7 +5,7 @@ class TOPOLOGICAL_ORDERING {
     public static SortedSet<Node> topological_ordering (List<Node> directedGraph) {
         SortedSet<Node> orderedNodes = new TreeSet<>();
         for (Node node : directedGraph) {
-            if (node.getIncomingNodes().isEmpty()) {
+            if (node.getPredecessor().isEmpty()) {
                 orderedNodes.add(node);
             }
         }

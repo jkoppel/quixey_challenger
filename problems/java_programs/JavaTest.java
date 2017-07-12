@@ -69,5 +69,59 @@ public class JavaTest {
             System.out.printf("u: %s, v: %s, weight: %d\n", edge.node1.getValue(), edge.node2.getValue(), edge.weight);
         }
 
+        Node nodeA = new Node("A");
+        WeightedEdge edge_1 = new WeightedEdge(nodeA, new Node("B"), 3);
+        WeightedEdge edge_2 = new WeightedEdge(nodeA, new Node("C"), 3);
+        WeightedEdge edge_3 = new WeightedEdge(nodeA, new Node("F"), 5);
+        WeightedEdge edge_4 = new WeightedEdge(new Node("C"), new Node("B"), -2);
+        WeightedEdge edge_5 = new WeightedEdge(new Node("C"), new Node("D"), 7);
+        WeightedEdge edge_6 = new WeightedEdge(new Node("C"), new Node("E"), 4);
+        WeightedEdge edge_7 = new WeightedEdge(new Node("D"), new Node("E"), -5);
+        WeightedEdge edge_8 = new WeightedEdge(new Node("E"), new Node("F"), -1);
+
+
+        List<WeightedEdge> graph2 = new ArrayList<>(Arrays.asList(edge_1, edge_2, edge_3, edge_4, edge_5, edge_6, edge_7, edge_8));
+        SHORTEST_PATHS path = new SHORTEST_PATHS();
+        Map<String,Integer> weight_by_node = new HashMap<String,Integer>();
+        weight_by_node = path.shortest_paths(nodeA, graph2);
+        for (String node : weight_by_node.keySet()) {
+            System.out.printf("Node: %s, distance: %d\n", node, weight_by_node.get(node));
+        }
+
+
+        Map<List<String>, Integer> graph2 = new HashMap<>();
+        graph2.put(new ArrayList<String>(Arrays.asList("A","C")),3);
+        graph2.put(new ArrayList<String>(Arrays.asList("A","F")),5);
+        graph2.put(new ArrayList<String>(Arrays.asList("C","B")),-2);
+        graph2.put(new ArrayList<String>(Arrays.asList("C","D")),7);
+        graph2.put(new ArrayList<String>(Arrays.asList("C","E")),4);
+        graph2.put(new ArrayList<String>(Arrays.asList("D","E")),-5);
+        graph2.put(new ArrayList<String>(Arrays.asList("E","F")),-1);
+
+        SHORTEST_PATHS path = new SHORTEST_PATHS();
+        Map<String,Integer> weight_by_node = new HashMap<String,Integer>();
+        weight_by_node = path.shortest_paths("A", graph2);
+        for (String node : weight_by_node.keySet()) {
+            System.out.printf("Node: %s, distance: %d\n", node, weight_by_node.get(node));
+        }
+
+        Map<List<Integer>, Integer> graph3 = new HashMap<>();
+        graph3.put(new ArrayList<Integer>(Arrays.asList(1,3)),3);
+        graph3.put(new ArrayList<Integer>(Arrays.asList(1,6)),5);
+        graph3.put(new ArrayList<Integer>(Arrays.asList(3,2)),-2);
+        graph3.put(new ArrayList<Integer>(Arrays.asList(3,4)),7);
+        graph3.put(new ArrayList<Integer>(Arrays.asList(3,5)),4);
+        graph3.put(new ArrayList<Integer>(Arrays.asList(4,5)),-5);
+        graph3.put(new ArrayList<Integer>(Arrays.asList(5,6)),-1);
+
+        SHORTEST_PATH_LENGTHS path2 = new SHORTEST_PATH_LENGTHS();
+        Map<List<Integer>,Integer> length_by_path = new HashMap<>();
+        length_by_path = path2.shortest_path_lengths(6, graph3);
+        for (List<Integer> edge : length_by_path.keySet()) {
+            for(Integer i : edge) {
+                System.out.printf(" Node: %d ", i);
+            }
+            System.out.printf(" %d\n",  length_by_path.get(edge));
+        }
     }
 }

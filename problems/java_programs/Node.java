@@ -5,13 +5,13 @@ public class Node {
 
     private String value;
     private ArrayList<Node> successors;
-    private ArrayList<Node> incomingNodes;
+    private ArrayList<Node> predecessors;
     private Node successor;
 
     public Node() {
         this.successor = null;
         this.successors = null;
-        this.incomingNodes = null;
+        this.predecessors = null;
         this.value = null;
     }
 
@@ -30,9 +30,9 @@ public class Node {
         this.successors = successors;
     }
 
-    public Node(String value, ArrayList<Node> incomingNodes, ArrayList<Node> successors) {
+    public Node(String value, ArrayList<Node> predecessors, ArrayList<Node> successors) {
         this.value = value;
-        this.incomingNodes = incomingNodes;
+        this.predecessors = predecessors;
         this.successors = successors;
     }
 
@@ -51,7 +51,7 @@ public class Node {
     ArrayList<Node> getSuccessors() {
         return successors;
     }
-    ArrayList<Node> getIncomingNodes() {
-        return incomingNodes;
+    ArrayList<Node> getPredecessor() {
+        return predecessors;
     }
 }
