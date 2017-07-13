@@ -37,7 +37,6 @@ public class MINIMUM_SPANNING_TREE {
                     groupByNode.put(node, vertex_u_span);
                     System.out.println(node.getValue());
                 }
-                System.out.println();
             }
         }
         return minSpanningTree;

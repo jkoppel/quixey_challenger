@@ -37,10 +37,6 @@ public class SHORTEST_PATH_LENGTHS {
         for (int k = 0; k <numNodes; k++) {
             for (int i = 0; i <numNodes; i++) {
                 for (int j = 0; j <numNodes; k++) {
-                    List<Integer> edge_i_j = new ArrayList<>(Arrays.asList(i,j));
-                    List<Integer> edge_j_i = new ArrayList<>(Arrays.asList(j,i));
-                    List<Integer> edge_i_k = new ArrayList<>(Arrays.asList(i,k));
-                    //System.out.printf("jk: %d, ji: %d, ik: %d \n", length_by_path.get(edge_j_k), length_by_path.get(edge_j_i), length_by_path.get(edge_i_k));
                     int update_length = Math.min(length_by_path.get(Arrays.asList(i,j)),
                             length_by_path.get(Arrays.asList(i,k)) + length_by_path.get(Arrays.asList(k,j)));
                     length_by_path.put(Arrays.asList(i,j), update_length);

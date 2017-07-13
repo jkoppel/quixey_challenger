@@ -1,165 +1,56 @@
 package java_programs;
 import java.util.*;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
  *
- * @author derricklin
+ * @author Angela Chen
  */
+
 public class SHORTEST_PATH_LENGTH {
-    public static Integer shortest_path_length(Map<Pair<Node,Node>,Integer> length_by_edge, Node startnode, Node goalnode ) {
+    int shortest_path_length(Map<List<Node>, Integer> length_by_edge, Node startnode, Node goalnode) {
+        int n = length_by_edge.size();
+        // the shortest distance from source to each node
+        Map<Node, Integer> unvisitedNodes = new HashMap();
+        Set<Node> visitedNodes = new HashSet<>();
 
-        PriorityQueue<Pair<Node,Integer>> unvisited_nodes = new PriorityQueue<Pair<Node,Integer>>(30, new Comparator<Pair<Node,Integer>>() {
+        unvisitedNodes.put(startnode, 0);
 
-            @Override
-            public int compare(Pair<Node,Integer> pair1, Pair<Node,Integer> pair2) {
-                return Integer.compare(pair1.second, pair2.second);
-            }
-        });
+        while (!unvisitedNodes.isEmpty()) {
+            Node node = getNodeWithMinDistance(unvisitedNodes);
+            int distance = unvisitedNodes.get(node);
 
-        unvisited_nodes.add(new Pair<Node,Integer>(startnode, 0));
-        Set<Node> visited_nodes = new HashSet<Node>();
-
-        while (!unvisited_nodes.isEmpty()) {
-            Pair<Node,Integer> popped = unvisited_nodes.poll();
-            Node node = popped.getFirst();
-            Integer distance = popped.getSecond();
-            if (node == goalnode) {
+            if (node.equals(goalnode)) {
                 return distance;
             }
 
-            visited_nodes.add(node);
-
-            for (Node nextnode : node.successors()) { // outgoing nodes should just be successors
-                if (visited_nodes.contains(nextnode)) {
+            visitedNodes.add(node);
+            for (Node nextnode : node.getSuccessors()) {
+                if (visitedNodes.contains(nextnode)) {
                     continue;
                 }
 
-                Integer new_value;
-                Integer alt_value = distance + length_by_edge.get(new Pair<Node,Node>(node,nextnode));
-                new_value = alt_value; // if nextnode isn't in unvisited, this is default
-                Iterator<Pair<Node,Integer>> hacky = unvisited_nodes.iterator();
-
-                do {
-                    Pair<Node,Integer> current = hacky.next();
-                    if (current.getFirst().equals(nextnode)) {
-                        new_value = Math.min(current.getSecond(), alt_value);
-                    }
-                } while (hacky.hasNext());
-
-                Pair<Node,Integer> to_insert = new Pair<Node,Integer>(nextnode,new_value);
-
-                hacky = unvisited_nodes.iterator();
-                boolean update = false;
-                do {
-                    Pair<Node,Integer> current = hacky.next();
-                    if (current.getFirst().equals(nextnode)) {
-                        // update
-                        unvisited_nodes.remove(current);
-                        unvisited_nodes.add(to_insert);
-                        update = true;
-                        break;
-
-                    }
-
-                } while (hacky.hasNext());
-
-                if (!update) {
-                    // insert
-                    unvisited_nodes.add(to_insert);
+                if (unvisitedNodes.get(nextnode) == null) {
+                    unvisitedNodes.put(nextnode, Integer.MAX_VALUE);
                 }
+
+                unvisitedNodes.put(node, Math.min(unvisitedNodes.get(nextnode),
+                        distance + length_by_edge.get(Arrays.asList(node, nextnode))));
             }
         }
 
         return Integer.MAX_VALUE;
     }
 
-    public static class Node {
-        private List<Node> successors = new ArrayList<Node>();
-        public String name = "";
-
-        public List<Node> successors() {
-            return successors;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean equals(Node other) {
-            if (successors == other.successors() && name.equals(other.name)) {
-                return true;
-            } else {
-                return false;
+    Node getNodeWithMinDistance(Map<Node,Integer> list) {
+        Node minNode = null;
+        int minDistance = Integer.MAX_VALUE;
+        for (Node node : list.keySet()) {
+            int distance = list.get(node);
+            if (distance < minDistance) {
+                minDistance = distance;
+                minNode = node;
             }
         }
-
-        @Override
-        public String toString() {
-            return "Node: ".concat(name);
-        }
-
-        @Override
-        public int hashCode() {
-            String to_hash = name;
-            for (Node cur_node : successors) {
-                to_hash += cur_node.getName();
-            }
-            int hc = to_hash.hashCode();
-            return hc;
-
-        }
-        // need to write a hashCode function
-        // possibly toString()
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Node other = (Node) obj;
-            if (this.successors != other.successors && (this.successors == null || !this.successors.equals(other.successors))) {
-                return false;
-            }
-            if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
-                return false;
-            }
-            return true;
-        }
+        return minNode;
     }
-
-
-    public static class Pair<F, S> {
-        private F first; //first member of pair
-        private S second; //second member of pair
-
-        public Pair(F first, S second) {
-            this.first = first;
-            this.second = second;
-        }
-
-        public void setFirst(F first) {
-            this.first = first;
-        }
-
-        public void setSecond(S second) {
-            this.second = second;
-        }
-
-        public F getFirst() {
-            return first;
-        }
-
-        public S getSecond() {
-            return second;
-        }
-    }
-
 }
