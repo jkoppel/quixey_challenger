@@ -12,7 +12,7 @@ class TOPOLOGICAL_ORDERING {
 
         for (Node node : orderedNodes) {
             for (Node nextNodes : node.getSuccessors()) {
-                if (nextNodes.getSuccessors().containsAll(orderedNodes)) {
+                if (orderedNodes.containsAll(nextNodes.getSuccessors())) {
                     orderedNodes.add(nextNodes);
                 }
             }
