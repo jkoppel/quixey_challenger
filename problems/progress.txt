@@ -13,9 +13,9 @@ Unfortunately Python treats single and double quotes identically, and outputs wi
 Complete:
 bitcount: infinite while loop in buggy versions
 bucketsort: fine
-flatten: compiles fine, but Java lacks generators and so buggy version gives same output :(
 find_first_in_sorted: fine
 find_in_sorted: fine
+flatten: compiles fine, but Java lacks generators and so buggy version gives same output :(
 gcd: looks fine, recursion depth exceeded / stackoverflow
 get_factors: fine
 hanoi: fine
